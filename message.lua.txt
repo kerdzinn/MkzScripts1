@@ -16,16 +16,14 @@ local playerGui = plr:WaitForChild("PlayerGui")
 local originalVolume = SoundService.Volume
 SoundService.Volume = 0
 
--- muta todos os sons existentes
 for _, sound in pairs(game:GetDescendants()) do
-	if sound:IsA("Sound") or sound:IsA("SoundGroup") then
+	if sound:IsA("Sound") then
 		pcall(function()
 			sound.Volume = 0
 		end)
 	end
 end
 
--- impede novos sons de tocar
 game.DescendantAdded:Connect(function(descendant)
 	if descendant:IsA("Sound") then
 		pcall(function()
@@ -45,8 +43,8 @@ gui.DisplayOrder = 9999
 -- fundo PRETO SÓLIDO 100%
 local bg = Instance.new("Frame")
 bg.Size = UDim2.new(1,0,1,0)
-bg.BackgroundColor3 = Color3.fromRGB(0,0,0) -- PRETO TOTAL
-bg.BackgroundTransparency = 0 -- SEM TRANSPARÊNCIA
+bg.BackgroundColor3 = Color3.fromRGB(0,0,0)
+bg.BackgroundTransparency = 0
 bg.Parent = gui
 bg.ZIndex = 1
 
@@ -69,7 +67,6 @@ for i = 1, 15 do
 	corner.CornerRadius = UDim.new(1,0)
 	corner.Parent = particle
 	
-	-- anima partícula
 	task.spawn(function()
 		while particle and particle.Parent do
 			local randomTime = math.random(30,60)/10
@@ -86,28 +83,26 @@ end
 -- título GIGANTE COM SOMBRA E GRADIENTE
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(0.8,0,0.25,0)
-title.Position = UDim2.new(0.5,0,0.35,0) -- MAIS CENTRALIZADO (antes era 0.2)
+title.Position = UDim2.new(0.5,0,0.35,0)
 title.AnchorPoint = Vector2.new(0.5,0.5)
 title.BackgroundTransparency = 1
 title.Text = "Mkz"
 title.Font = Enum.Font.GothamBold
 title.TextScaled = true
-title.TextColor3 = Color3.fromRGB(0,160,255) -- azul base
-title.TextStrokeTransparency = 0.5 -- contorno suave
-title.TextStrokeColor3 = Color3.fromRGB(0,80,180) -- contorno azul escuro
+title.TextColor3 = Color3.fromRGB(0,160,255)
+title.TextStrokeTransparency = 0.5
+title.TextStrokeColor3 = Color3.fromRGB(0,80,180)
 title.ZIndex = 2
 title.Parent = bg
 
--- gradiente no título
 local titleGradient = Instance.new("UIGradient")
 titleGradient.Color = ColorSequence.new{
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(100,200,255)), -- azul claro no topo
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(0,120,255)) -- azul escuro embaixo
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(100,200,255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0,120,255))
 }
 titleGradient.Rotation = 90
 titleGradient.Parent = title
 
--- EFEITO PULSAR NO TÍTULO
 task.spawn(function()
 	while title and title.Parent do
 		TweenService:Create(title, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
@@ -120,7 +115,7 @@ end)
 -- FRASES ALTERNADAS COM SOMBRA
 local phraseLabel = Instance.new("TextLabel")
 phraseLabel.Size = UDim2.new(0.7,0,0.06,0)
-phraseLabel.Position = UDim2.new(0.5,0,0.58,0) -- ajustado para ficar proporcional
+phraseLabel.Position = UDim2.new(0.5,0,0.58,0)
 phraseLabel.AnchorPoint = Vector2.new(0.5,0.5)
 phraseLabel.BackgroundTransparency = 1
 phraseLabel.Text = "Loading the script, wait a minute."
@@ -128,12 +123,12 @@ phraseLabel.Font = Enum.Font.Gotham
 phraseLabel.TextScaled = true
 phraseLabel.TextColor3 = Color3.fromRGB(255,255,255)
 phraseLabel.TextTransparency = 0
-phraseLabel.TextStrokeTransparency = 0.8 -- sombra leve
+phraseLabel.TextStrokeTransparency = 0.8
 phraseLabel.TextStrokeColor3 = Color3.fromRGB(0,0,0)
 phraseLabel.ZIndex = 3
 phraseLabel.Parent = bg
 
--- MENSAGEM DE ERRO (inicialmente invisível)
+-- MENSAGEM DE ERRO
 local errorLabel = Instance.new("TextLabel")
 errorLabel.Size = UDim2.new(0.8,0,0.08,0)
 errorLabel.Position = UDim2.new(0.5,0,0.58,0)
@@ -142,8 +137,8 @@ errorLabel.BackgroundTransparency = 1
 errorLabel.Text = "Error! Something is wrong, try rejoining..."
 errorLabel.Font = Enum.Font.GothamBold
 errorLabel.TextScaled = true
-errorLabel.TextColor3 = Color3.fromRGB(255,50,50) -- vermelho
-errorLabel.TextTransparency = 1 -- começa invisível
+errorLabel.TextColor3 = Color3.fromRGB(255,50,50)
+errorLabel.TextTransparency = 1
 errorLabel.TextStrokeTransparency = 1
 errorLabel.TextStrokeColor3 = Color3.fromRGB(0,0,0)
 errorLabel.ZIndex = 3
@@ -152,7 +147,7 @@ errorLabel.Parent = bg
 -- barra moldura (cinza) COM SOMBRA
 local barFrame = Instance.new("Frame")
 barFrame.Size = UDim2.new(0.5,0,0.05,0)
-barFrame.Position = UDim2.new(0.5,0,0.68,0) -- ajustado
+barFrame.Position = UDim2.new(0.5,0,0.68,0)
 barFrame.AnchorPoint = Vector2.new(0.5,0.5)
 barFrame.BackgroundColor3 = Color3.fromRGB(70,70,78)
 barFrame.ZIndex = 3
@@ -162,7 +157,6 @@ local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0,12)
 corner.Parent = barFrame
 
--- sombra na barra
 local barShadow = Instance.new("UIStroke")
 barShadow.Color = Color3.fromRGB(0,0,0)
 barShadow.Thickness = 3
@@ -181,17 +175,15 @@ local fillCorner = Instance.new("UICorner")
 fillCorner.CornerRadius = UDim.new(0,12)
 fillCorner.Parent = fill
 
--- gradiente na barra azul (efeito brilhante)
 local fillGradient = Instance.new("UIGradient")
 fillGradient.Color = ColorSequence.new{
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(50,180,255)), -- azul claro
-	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0,140,255)), -- azul médio
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(0,100,200)) -- azul escuro
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(50,180,255)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0,140,255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0,100,200))
 }
 fillGradient.Rotation = 90
 fillGradient.Parent = fill
 
--- brilho na barra (efeito de luz)
 local fillGlow = Instance.new("UIStroke")
 fillGlow.Color = Color3.fromRGB(100,200,255)
 fillGlow.Thickness = 2
@@ -231,7 +223,7 @@ task.spawn(function()
 	end
 end)
 
--- ONDAS ANIMADAS NA BARRA (shimmer)
+-- ONDAS ANIMADAS NA BARRA
 local shimmer = Instance.new("UIGradient")
 shimmer.Transparency = NumberSequence.new{
 	NumberSequenceKeypoint.new(0, 0.8),
@@ -254,7 +246,7 @@ end)
 local percent = Instance.new("TextLabel")
 percent.Size = UDim2.new(0.15,0,0.05,0)
 percent.BackgroundTransparency = 1
-percent.Position = UDim2.new(0.5,0,0.76,0) -- ajustado
+percent.Position = UDim2.new(0.5,0,0.76,0)
 percent.AnchorPoint = Vector2.new(0.5,0.5)
 percent.Text = "0%"
 percent.Font = Enum.Font.GothamSemibold
@@ -309,19 +301,19 @@ local phrases = {
 local currentPhraseIndex = 1
 local phraseActive = true
 
--- Loop de animação das frases
 task.spawn(function()
 	while phraseActive do
-		-- adiciona pontinhos animados
 		local dots = ""
 		for dotCount = 1, 3 do
+			if not phraseActive then break end
 			phraseLabel.Text = phrases[currentPhraseIndex] .. dots
 			dots = dots .. "."
 			task.wait(0.4)
 		end
 		task.wait(0.5)
 		
-		-- Fade OUT
+		if not phraseActive then break end
+		
 		local tweenOut = TweenService:Create(
 			phraseLabel, 
 			TweenInfo.new(0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
@@ -330,11 +322,11 @@ task.spawn(function()
 		tweenOut:Play()
 		tweenOut.Completed:Wait()
 		
-		-- Troca a frase
 		currentPhraseIndex = currentPhraseIndex % #phrases + 1
 		phraseLabel.Text = phrases[currentPhraseIndex]
 		
-		-- Fade IN
+		if not phraseActive then break end
+		
 		local tweenIn = TweenService:Create(
 			phraseLabel,
 			TweenInfo.new(0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
@@ -352,53 +344,49 @@ local loadingActive = true
 local startTime = tick()
 local duration = 110
 local errorTriggered = false
-local maxProgress = 0.98 -- LIMITE MÁXIMO
 
 local function updateBar()
 	local elapsed = tick() - startTime
-	local progress = math.clamp(elapsed / duration, 0, maxProgress)
+	local progress = elapsed / duration
+	
+	if progress >= 0.98 then
+		progress = 0.98
+		
+		if not errorTriggered then
+			errorTriggered = true
+			phraseActive = false
+			
+			task.spawn(function()
+				TweenService:Create(phraseLabel, TweenInfo.new(0.8, Enum.EasingStyle.Quad), {
+					TextTransparency = 1,
+					TextStrokeTransparency = 1
+				}):Play()
+				
+				task.wait(1)
+				
+				TweenService:Create(errorLabel, TweenInfo.new(1.2, Enum.EasingStyle.Quad), {
+					TextTransparency = 0,
+					TextStrokeTransparency = 0.7
+				}):Play()
+			end)
+		end
+	end
 	
 	fill.Size = UDim2.new(progress, 0, 1, 0)
 	percent.Text = string.format("%d%%", math.floor(progress * 100))
-	
-	-- quando chegar em 98%, mostra o erro
-	if progress >= 0.98 and not errorTriggered then
-		errorTriggered = true
-		phraseActive = false -- para as frases
-		
-		-- fade out nas frases normais
-		task.spawn(function()
-			TweenService:Create(phraseLabel, TweenInfo.new(0.8, Enum.EasingStyle.Quad), {
-				TextTransparency = 1,
-				TextStrokeTransparency = 1
-			}):Play()
-			
-			task.wait(1)
-			
-			-- fade in no erro
-			TweenService:Create(errorLabel, TweenInfo.new(1.2, Enum.EasingStyle.Quad), {
-				TextTransparency = 0,
-				TextStrokeTransparency = 0.7
-			}):Play()
-		end)
-	end
-	
-	-- continua rodando para sempre
-	return true
 end
 
-local connection = RunService.Heartbeat:Connect(function()
-	if not loadingActive then return end
-	updateBar()
+RunService.Heartbeat:Connect(function()
+	if loadingActive then
+		updateBar()
+	end
 end)
 
 -- === RESTAURAÇÃO ===
 function restoreAll()
 	loadingActive = false
 	phraseActive = false
-	if connection then connection:Disconnect() end
 	
-	-- restaura o volume do jogo
 	SoundService.Volume = originalVolume
 	
 	for _, coreType in ipairs(disabledCore) do
@@ -423,5 +411,5 @@ end
 
 getgenv().MkzCleanup = restoreAll
 
-print("MkzLoad: Ativo com efeitos visuais! 110 segundos")
+print("MkzLoad: Ativo! Trava em 98% | Som mutado")
 print("Use getgenv().MkzCleanup() para fechar")
