@@ -1,42 +1,51 @@
---// Mkz Loading Screen - Clean + Fluido
---// Feito para executores (KRNL, Delta, Synapse, Fluxus etc.)
---// Passo 1 + 2 integrados
+--// MKZ Loading Screen (Executor Version)
+--// Feito por ChatGPT (ajustado para executores como Delta/Krnl)
+--// Versão: 1.1 (corrige bug visual e layers)
 
--- Serviços
-local Players = game:GetService("Players")
-local StarterGui = game:GetService("StarterGui")
-local CoreGui = game:GetService("CoreGui")
-local RunService = game:GetService("RunService")
+pcall(function()
+    -- Remove GUIs padrão do Roblox
+    local StarterGui = game:GetService("StarterGui")
+    StarterGui:SetCore("TopbarEnabled", false)
+    for _,v in pairs(game:GetService("CoreGui"):GetChildren()) do
+        if v:IsA("ScreenGui") then
+            v.Enabled = false
+        end
+    end
+end)
 
-local plr = Players.LocalPlayer
-if not plr then return end
-local playerGui = plr:WaitForChild("PlayerGui")
-
--- === Criar GUI principal ===
+-- Cria GUI principal
 local gui = Instance.new("ScreenGui")
-gui.Name = "MkzLoad_Executor"
+gui.Name = "MkzLoadScreen"
 gui.IgnoreGuiInset = true
 gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-gui.DisplayOrder = 9999
+gui.Parent = game:GetService("CoreGui")
 
--- Fundo
+-- Fundo escuro
 local bg = Instance.new("Frame")
 bg.Size = UDim2.new(1, 0, 1, 0)
 bg.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
-bg.ZIndex = 99999
+bg.ZIndex = 99998
 bg.Parent = gui
+
+-- Gradiente de fundo (suave e moderno)
+local bgGradient = Instance.new("UIGradient", bg)
+bgGradient.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 0)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 10, 30))
+}
+bgGradient.Rotation = 90
 
 -- Título
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(0.3, 0, 0.08, 0)
-title.Position = UDim2.new(0.5, 0, 0.33, 0)
-title.AnchorPoint = Vector2.new(0.5, 0.5)
-title.BackgroundTransparency = 1
 title.Text = "Mkz"
 title.Font = Enum.Font.GothamBold
+title.TextColor3 = Color3.fromRGB(0, 140, 255)
 title.TextScaled = true
-title.TextColor3 = Color3.fromRGB(0, 160, 255)
+title.Size = UDim2.new(0.3, 0, 0.08, 0)
+title.Position = UDim2.new(0.5, 0, 0.43, 0)
+title.AnchorPoint = Vector2.new(0.5, 0.5)
+title.BackgroundTransparency = 1
 title.ZIndex = 99999
 title.Parent = gui
 
@@ -46,18 +55,27 @@ barFrame.Size = UDim2.new(0.42, 0, 0.045, 0)
 barFrame.Position = UDim2.new(0.5, 0, 0.55, 0)
 barFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 barFrame.BackgroundColor3 = Color3.fromRGB(70, 70, 78)
-barFrame.ZIndex = 99999
+barFrame.ZIndex = 99996
 barFrame.Parent = gui
 
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 12)
 corner.Parent = barFrame
 
+-- Camada preta pra cobrir falhas iniciais da barra
+local cover = Instance.new("Frame")
+cover.Size = UDim2.new(0.42, 0, 0.045, 0)
+cover.Position = barFrame.Position
+cover.AnchorPoint = barFrame.AnchorPoint
+cover.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
+cover.ZIndex = 99997
+cover.Parent = gui
+
 -- Barra de progresso
 local fill = Instance.new("Frame")
 fill.Size = UDim2.new(0, 0, 1, 0)
 fill.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-fill.ZIndex = 99999
+fill.ZIndex = 99995
 fill.Parent = barFrame
 
 local fillCorner = Instance.new("UICorner")
@@ -70,102 +88,40 @@ fillGrad.Color = ColorSequence.new{
 	ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 100, 255))
 }
 
--- Texto percentual
-local percent = Instance.new("TextLabel")
-percent.BackgroundTransparency = 1
-percent.Position = UDim2.new(0.5, 0, 0.62, 0)
-percent.AnchorPoint = Vector2.new(0.5, 0)
-percent.Text = "0%"
-percent.Font = Enum.Font.GothamSemibold
-percent.TextScaled = true
-percent.TextColor3 = Color3.fromRGB(200, 200, 210)
-percent.ZIndex = 99999
-percent.Parent = gui
+-- Sombras sutis (efeito moderno)
+local shadow = Instance.new("ImageLabel")
+shadow.AnchorPoint = Vector2.new(0.5, 0.5)
+shadow.Position = barFrame.Position + UDim2.new(0, 0, 0.06, 0)
+shadow.Size = barFrame.Size + UDim2.new(0, 20, 0, 20)
+shadow.Image = "rbxassetid://1316045217"
+shadow.ImageTransparency = 0.6
+shadow.BackgroundTransparency = 1
+shadow.ZIndex = 99990
+shadow.Parent = gui
 
--- === Layer máximo (CoreGui) ===
-local parentedToCore = false
-local ok = pcall(function()
-	gui.Parent = CoreGui
-end)
-if ok then
-	parentedToCore = true
-else
-	gui.Parent = playerGui
-	parentedToCore = false
+-- Texto de porcentagem (suave e limpo)
+local percentLabel = Instance.new("TextLabel")
+percentLabel.Text = "0%"
+percentLabel.Font = Enum.Font.Gotham
+percentLabel.TextColor3 = Color3.fromRGB(200, 200, 210)
+percentLabel.TextScaled = true
+percentLabel.Size = UDim2.new(0.1, 0, 0.05, 0)
+percentLabel.Position = UDim2.new(0.5, 0, 0.61, 0)
+percentLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+percentLabel.BackgroundTransparency = 1
+percentLabel.ZIndex = 99999
+percentLabel.Parent = gui
+
+-- Carregamento FLUIDO
+local TweenService = game:GetService("TweenService")
+for i = 1, 100 do
+	local progress = i / 100
+	TweenService:Create(fill, TweenInfo.new(0.05, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		Size = UDim2.new(progress, 0, 1, 0)
+	}):Play()
+	percentLabel.Text = i .. "%"
+	wait(0.05) -- 1% por segundo, fluido
 end
 
--- === Ocultar outras GUIs ===
-local hiddenFolder = Instance.new("Folder")
-hiddenFolder.Name = "MkzHiddenTemp"
-hiddenFolder.Parent = playerGui
-
-local movedScreens = {}
-for _, child in ipairs(playerGui:GetChildren()) do
-	if child:IsA("ScreenGui") and child ~= gui and child.Name ~= "MkzHiddenTemp" then
-		pcall(function()
-			table.insert(movedScreens, child)
-			child.Parent = hiddenFolder
-		end)
-	end
-end
-
--- === Desabilitar CoreGui (HUDs padrão) ===
-local disabledCore = {}
-for _, coreType in ipairs(Enum.CoreGuiType:GetEnumItems()) do
-	pcall(function()
-		StarterGui:SetCoreGuiEnabled(coreType, false)
-		table.insert(disabledCore, coreType)
-	end)
-end
-
--- === Função para restaurar tudo ===
-local function restoreAll()
-	for _, coreType in ipairs(disabledCore) do
-		pcall(function()
-			StarterGui:SetCoreGuiEnabled(coreType, true)
-		end)
-	end
-	if hiddenFolder and hiddenFolder.Parent then
-		for _, obj in ipairs(hiddenFolder:GetChildren()) do
-			pcall(function() obj.Parent = playerGui end)
-		end
-		pcall(function() hiddenFolder:Destroy() end)
-	end
-	pcall(function()
-		if gui and gui.Parent then
-			gui:Destroy()
-		end
-	end)
-end
-getgenv().MkzCleanup = restoreAll
-
--- === Carregamento fluido ===
-local progress = 0
-local target = 0
-local loadingTime = 100 -- 100 segundos = 1%/s
-local durationPerPercent = loadingTime / 100
-local startTime = tick()
-
-RunService.Heartbeat:Connect(function(dt)
-	local elapsed = tick() - startTime
-	target = math.clamp(elapsed / durationPerPercent, 0, 100)
-	progress = progress + (target - progress) * 0.08 -- suaviza
-	fill.Size = UDim2.new(progress / 100, 0, 1, 0)
-	percent.Text = string.format("%d%%", math.floor(progress))
-end)
-
--- === Finalização automática ===
-task.spawn(function()
-	task.wait(loadingTime + 1)
-	for i = 1, 60 do
-		gui.BackgroundTransparency = i / 60
-		title.TextTransparency = i / 60
-		barFrame.BackgroundTransparency = i / 60
-		fill.BackgroundTransparency = i / 60
-		percent.TextTransparency = i / 60
-		task.wait(0.016)
-	end
-	getgenv().MkzCleanup()
-end)
-
-print(("MkzLoad iniciado. parentedToCore=%s | getgenv().MkzCleanup() disponível."):format(tostring(parentedToCore)))
+wait(0.6)
+gui:Destroy()
