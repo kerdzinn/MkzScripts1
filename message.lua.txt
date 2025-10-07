@@ -1,6 +1,5 @@
 --// MKZ Loading Screen (Executor Version)
---// Feito por ChatGPT (ajustado para executores como Delta/Krnl)
---// Versão: 1.1 (corrige bug visual e layers)
+--// Feito por ChatGPT, versão ajustada (corrige bug da borda grossa no início)
 
 pcall(function()
     -- Remove GUIs padrão do Roblox
@@ -25,10 +24,10 @@ gui.Parent = game:GetService("CoreGui")
 local bg = Instance.new("Frame")
 bg.Size = UDim2.new(1, 0, 1, 0)
 bg.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
-bg.ZIndex = 99998
+bg.ZIndex = 9999
 bg.Parent = gui
 
--- Gradiente de fundo (suave e moderno)
+-- Gradiente de fundo
 local bgGradient = Instance.new("UIGradient", bg)
 bgGradient.Color = ColorSequence.new{
 	ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 0)),
@@ -46,7 +45,7 @@ title.Size = UDim2.new(0.3, 0, 0.08, 0)
 title.Position = UDim2.new(0.5, 0, 0.43, 0)
 title.AnchorPoint = Vector2.new(0.5, 0.5)
 title.BackgroundTransparency = 1
-title.ZIndex = 99999
+title.ZIndex = 10001
 title.Parent = gui
 
 -- Moldura da barra
@@ -55,27 +54,19 @@ barFrame.Size = UDim2.new(0.42, 0, 0.045, 0)
 barFrame.Position = UDim2.new(0.5, 0, 0.55, 0)
 barFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 barFrame.BackgroundColor3 = Color3.fromRGB(70, 70, 78)
-barFrame.ZIndex = 99996
+barFrame.ZIndex = 10000
 barFrame.Parent = gui
 
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 12)
 corner.Parent = barFrame
 
--- Camada preta pra cobrir falhas iniciais da barra
-local cover = Instance.new("Frame")
-cover.Size = UDim2.new(0.42, 0, 0.045, 0)
-cover.Position = barFrame.Position
-cover.AnchorPoint = barFrame.AnchorPoint
-cover.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
-cover.ZIndex = 99997
-cover.Parent = gui
-
--- Barra de progresso
+-- Barra de progresso (correção aqui 👇)
 local fill = Instance.new("Frame")
 fill.Size = UDim2.new(0, 0, 1, 0)
 fill.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-fill.ZIndex = 99995
+fill.ZIndex = 9999
+fill.ClipsDescendants = true -- <- impede o arredondamento exagerado no início
 fill.Parent = barFrame
 
 local fillCorner = Instance.new("UICorner")
@@ -88,7 +79,7 @@ fillGrad.Color = ColorSequence.new{
 	ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 100, 255))
 }
 
--- Sombras sutis (efeito moderno)
+-- Sombra
 local shadow = Instance.new("ImageLabel")
 shadow.AnchorPoint = Vector2.new(0.5, 0.5)
 shadow.Position = barFrame.Position + UDim2.new(0, 0, 0.06, 0)
@@ -96,10 +87,10 @@ shadow.Size = barFrame.Size + UDim2.new(0, 20, 0, 20)
 shadow.Image = "rbxassetid://1316045217"
 shadow.ImageTransparency = 0.6
 shadow.BackgroundTransparency = 1
-shadow.ZIndex = 99990
+shadow.ZIndex = 9998
 shadow.Parent = gui
 
--- Texto de porcentagem (suave e limpo)
+-- Texto de porcentagem
 local percentLabel = Instance.new("TextLabel")
 percentLabel.Text = "0%"
 percentLabel.Font = Enum.Font.Gotham
@@ -109,10 +100,10 @@ percentLabel.Size = UDim2.new(0.1, 0, 0.05, 0)
 percentLabel.Position = UDim2.new(0.5, 0, 0.61, 0)
 percentLabel.AnchorPoint = Vector2.new(0.5, 0.5)
 percentLabel.BackgroundTransparency = 1
-percentLabel.ZIndex = 99999
+percentLabel.ZIndex = 10001
 percentLabel.Parent = gui
 
--- Carregamento FLUIDO
+-- Carregamento suave
 local TweenService = game:GetService("TweenService")
 for i = 1, 100 do
 	local progress = i / 100
@@ -120,7 +111,7 @@ for i = 1, 100 do
 		Size = UDim2.new(progress, 0, 1, 0)
 	}):Play()
 	percentLabel.Text = i .. "%"
-	wait(0.05) -- 1% por segundo, fluido
+	wait(0.05)
 end
 
 wait(0.6)
