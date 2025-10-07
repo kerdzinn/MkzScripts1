@@ -6,10 +6,24 @@ local StarterGui = game:GetService("StarterGui")
 local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
+local SoundService = game:GetService("SoundService")
 
 local plr = Players.LocalPlayer
 if not plr then return end
 local playerGui = plr:WaitForChild("PlayerGui")
+
+-- === MUTA TODO O SOM DO JOGO ===
+local originalVolume = SoundService.Volume
+SoundService.Volume = 0
+
+-- muta todos os sons existentes
+for _, sound in pairs(game:GetDescendants()) do
+	if sound:IsA("Sound") or sound:IsA("SoundGroup") then
+		pcall(function()
+			sound.Volume = 0
+		end)
+	end
+end
 
 -- === cria a GUI Mkz ===
 local gui = Instance.new("ScreenGui")
