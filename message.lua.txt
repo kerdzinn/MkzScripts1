@@ -1,176 +1,93 @@
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ScriptersCorpAutoUI"
-ScreenGui.Parent = game:GetService("CoreGui")
+--// Mkz Loading Screen (Executor Script)
+--// Feito por ChatGPT (GPT-5) - Visual clean e fluido
 
-local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 300, 0, 180)
-MainFrame.Position = UDim2.new(0.5, -150, 0.4, -90)
-MainFrame.BackgroundColor3 = Color3.fromRGB(45, 55, 80) -- cor mais moderna
-MainFrame.BorderSizePixel = 0
-MainFrame.Active = true
-MainFrame.Draggable = true
-MainFrame.Parent = ScreenGui
+local plr = game:GetService("Players").LocalPlayer
+local gui = Instance.new("ScreenGui")
+gui.IgnoreGuiInset = true
+gui.ResetOnSpawn = false
+gui.Name = "MkzLoad"
+gui.Parent = plr:WaitForChild("PlayerGui")
 
-local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 12)
-MainCorner.Parent = MainFrame
+-- Fundo
+local bg = Instance.new("Frame", gui)
+bg.Size = UDim2.new(1, 0, 1, 0)
+bg.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 40)
-Title.Position = UDim2.new(0, 0, 0, 0)
-Title.BackgroundColor3 = Color3.fromRGB(60, 70, 110) -- cor do título
-Title.Text = "Scripters Corp Auto"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 18
-Title.TextXAlignment = Enum.TextXAlignment.Center
-Title.TextYAlignment = Enum.TextYAlignment.Center
-Title.Parent = MainFrame
+local bgGrad = Instance.new("UIGradient", bg)
+bgGrad.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(25, 25, 45)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 10, 20))
+}
+bgGrad.Rotation = 45
 
-local TitleCorner = Instance.new("UICorner")
-TitleCorner.CornerRadius = UDim.new(0, 12)
-TitleCorner.Parent = Title
+-- Título “Mkz”
+local title = Instance.new("TextLabel", gui)
+title.Size = UDim2.new(0.3, 0, 0.1, 0)
+title.Position = UDim2.new(0.5, 0, 0.35, 0)
+title.AnchorPoint = Vector2.new(0.5, 0.5)
+title.BackgroundTransparency = 1
+title.Text = "Mkz"
+title.Font = Enum.Font.GothamBold
+title.TextScaled = true
+title.TextColor3 = Color3.fromRGB(0, 160, 255)
 
-local HttpService = game:GetService("HttpService")
+local titleGrad = Instance.new("UIGradient", title)
+titleGrad.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 200, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 90, 255))
+}
+titleGrad.Rotation = 90
 
-local function formatMoney(num)
-    return string.format("%.1fM", num / 1000000)
+-- Moldura da barra
+local barFrame = Instance.new("Frame", gui)
+barFrame.Size = UDim2.new(0.4, 0, 0.04, 0)
+barFrame.Position = UDim2.new(0.5, 0, 0.55, 0)
+barFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+barFrame.BackgroundColor3 = Color3.fromRGB(70, 70, 80)
+Instance.new("UICorner", barFrame).CornerRadius = UDim.new(0, 10)
+
+-- Barra de progresso
+local fill = Instance.new("Frame", barFrame)
+fill.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+fill.Size = UDim2.new(0, 0, 1, 0)
+Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 10)
+
+local fillGrad = Instance.new("UIGradient", fill)
+fillGrad.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 180, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 100, 255))
+}
+
+-- Percentual (opcional)
+local percentLabel = Instance.new("TextLabel", gui)
+percentLabel.BackgroundTransparency = 1
+percentLabel.Position = UDim2.new(0.5, 0, 0.62, 0)
+percentLabel.AnchorPoint = Vector2.new(0.5, 0)
+percentLabel.Text = "0%"
+percentLabel.Font = Enum.Font.GothamSemibold
+percentLabel.TextScaled = true
+percentLabel.TextColor3 = Color3.fromRGB(180, 180, 200)
+
+-- Sombra
+local shadow = Instance.new("ImageLabel", gui)
+shadow.BackgroundTransparency = 1
+shadow.Image = "rbxassetid://1316045217"
+shadow.ImageTransparency = 0.4
+shadow.Size = UDim2.new(0.45, 0, 0.05, 0)
+shadow.Position = UDim2.new(0.5, 0, 0.55, 6)
+shadow.AnchorPoint = Vector2.new(0.5, 0)
+
+-- // Animação de carregamento (1% por segundo)
+local progress = 0
+for i = 1, 100 do
+	progress = i
+	fill:TweenSize(UDim2.new(progress/100, 0, 1, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.5, true)
+	percentLabel.Text = tostring(progress).."%"
+	wait(1)
 end
 
-local function parseInput(str)
-    local num = tonumber(str)
-    if num then
-        return math.clamp(num * 1000000, 1000000, 10000000)
-    end
-    return nil
-end
-
-local hwid = "unknown_hwid"
-pcall(function()
-    hwid = game:GetService("RbxAnalyticsService"):GetClientId()
-end)
-
-local cfgFile = "autojoin_"..hwid..".json"
-
-local function loadConfig()
-    if isfile and isfile(cfgFile) then
-        local success, data = pcall(function()
-            return HttpService:JSONDecode(readfile(cfgFile))
-        end)
-        if success and type(data) == "table" then
-            return data
-        end
-    end
-    return { MinMS = 1000000 }
-end
-
-local function saveConfig(cfg)
-    if writefile then
-        writefile(cfgFile, HttpService:JSONEncode(cfg))
-    end
-end
-
-local config = loadConfig()
-local MinMS = config.MinMS or 1000000
-
-local AutoJoinEnabled = false
-local Toggle = Instance.new("TextButton")
-Toggle.Size = UDim2.new(1, -20, 0, 35)
-Toggle.Position = UDim2.new(0, 10, 0, 50)
-Toggle.BackgroundColor3 = Color3.fromRGB(70, 85, 130) -- cor do botão
-Toggle.Text = "Auto Join: OFF"
-Toggle.TextColor3 = Color3.fromRGB(255, 120, 120)
-Toggle.Font = Enum.Font.GothamBold
-Toggle.TextSize = 16
-Toggle.Parent = MainFrame
-
-Toggle.MouseButton1Click:Connect(function()
-    AutoJoinEnabled = not AutoJoinEnabled
-    Toggle.Text = "Auto Join: " .. (AutoJoinEnabled and "ON" or "OFF")
-    Toggle.TextColor3 = AutoJoinEnabled and Color3.fromRGB(120, 255, 120) or Color3.fromRGB(255, 120, 120)
-end)
-
--- Min Label
-local MinLabel = Instance.new("TextLabel")
-MinLabel.Size = UDim2.new(1, -20, 0, 25)
-MinLabel.Position = UDim2.new(0, 10, 0, 95)
-MinLabel.BackgroundTransparency = 1
-MinLabel.Text = "Min M/s: " .. formatMoney(MinMS)
-MinLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinLabel.Font = Enum.Font.Gotham
-MinLabel.TextSize = 14
-MinLabel.Parent = MainFrame
-
--- Min TextBox
-local MinBox = Instance.new("TextBox")
-MinBox.Size = UDim2.new(1, -20, 0, 25)
-MinBox.Position = UDim2.new(0, 10, 0, 120)
-MinBox.BackgroundColor3 = Color3.fromRGB(60, 70, 95) -- cor do input
-MinBox.Text = tostring(MinMS/1000000)
-MinBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinBox.Font = Enum.Font.Gotham
-MinBox.TextSize = 14
-MinBox.ClearTextOnFocus = false
-MinBox.Parent = MainFrame
-
-MinBox.FocusLost:Connect(function()
-    local val = parseInput(MinBox.Text)
-    if val then
-        MinMS = val
-        MinLabel.Text = "Min M/s: " .. formatMoney(val)
-        saveConfig({ MinMS = MinMS })
-        MinBox.Text = tostring(MinMS/1000000)
-    else
-        MinBox.Text = tostring(MinMS/1000000)
-    end
-end)
-
-if not WebSocket then
-    warn("Your executor does not support WebSocket.")
-    return
-end
-
-local ws, err = WebSocket.connect("ws://5.255.97.147:6767/script")
-if not ws then
-    warn("WebSocket Error:", tostring(err))
-    return
-end
-
-local function parseMoney(str)
-    if not str then return 0 end
-    local num, suffix = str:match("(%d+%.?%d*)([MK]?)")
-    num = tonumber(num)
-    if not num then return 0 end
-
-    if suffix == "M" then
-        return num * 1000000
-    elseif suffix == "K" then
-        return num * 1000
-    else
-        return num
-    end
-end
-
-ws.OnMessage:Connect(function(msg)
-    local success, data = pcall(function()
-        return HttpService:JSONDecode(msg)
-    end)
-    if not success or type(data) ~= "table" then return end
-
-    if AutoJoinEnabled and data.type == "server_update" and data.data and data.data.join_script then
-        local moneyStr = data.data.money or "$0/s"
-        local moneyVal = parseMoney(moneyStr)
-
-        if moneyVal >= MinMS then
-            print("[AutoJoin] Joining server with "..moneyStr)
-            local func, err = loadstring(data.data.join_script)
-            if func then
-                pcall(func)
-            else
-                warn("Failed to load join script:", err)
-            end
-        else
-            print("[AutoJoin] Skipped server "..moneyStr.." < Min "..formatMoney(MinMS))
-        end
-    end
+-- // Após 100%
+wait(0.5)
+gui:TweenPosition(UDim2.new(0, 0, -1, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 1, true, function()
+	gui:Destroy()
 end)
