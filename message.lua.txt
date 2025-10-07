@@ -24,42 +24,42 @@ local bg = Instance.new("Frame")
 bg.Size = UDim2.new(1,0,1,0)
 bg.BackgroundColor3 = Color3.fromRGB(10,10,12)
 bg.Parent = gui
-bg.ZIndex = 99999
+bg.ZIndex = 1
 
--- título MUITO MAIOR
+-- título GIGANTE E BONITO
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(0.7,0,0.2,0) -- GIGANTE agora
-title.Position = UDim2.new(0.5,0,0.25,0)
+title.Size = UDim2.new(0.8,0,0.25,0) -- ENORME
+title.Position = UDim2.new(0.5,0,0.2,0)
 title.AnchorPoint = Vector2.new(0.5,0.5)
 title.BackgroundTransparency = 1
 title.Text = "Mkz"
 title.Font = Enum.Font.GothamBold
 title.TextScaled = true
 title.TextColor3 = Color3.fromRGB(0,160,255)
-title.ZIndex = 99999
+title.ZIndex = 2
 title.Parent = bg
 
 -- FRASES ALTERNADAS (acima da barra) - BRANCO
 local phraseLabel = Instance.new("TextLabel")
-phraseLabel.Size = UDim2.new(0.7,0,0.05,0)
-phraseLabel.Position = UDim2.new(0.5,0,0.48,0)
+phraseLabel.Size = UDim2.new(0.7,0,0.06,0)
+phraseLabel.Position = UDim2.new(0.5,0,0.52,0)
 phraseLabel.AnchorPoint = Vector2.new(0.5,0.5)
 phraseLabel.BackgroundTransparency = 1
 phraseLabel.Text = "Loading the script, wait a minute."
 phraseLabel.Font = Enum.Font.Gotham
 phraseLabel.TextScaled = true
-phraseLabel.TextColor3 = Color3.fromRGB(255,255,255) -- BRANCO
-title.TextStrokeTransparency = 1
-phraseLabel.ZIndex = 99999
+phraseLabel.TextColor3 = Color3.fromRGB(255,255,255)
+phraseLabel.TextTransparency = 0
+phraseLabel.ZIndex = 3
 phraseLabel.Parent = bg
 
 -- barra moldura (cinza)
 local barFrame = Instance.new("Frame")
-barFrame.Size = UDim2.new(0.42,0,0.045,0)
-barFrame.Position = UDim2.new(0.5,0,0.55,0)
+barFrame.Size = UDim2.new(0.5,0,0.05,0)
+barFrame.Position = UDim2.new(0.5,0,0.62,0)
 barFrame.AnchorPoint = Vector2.new(0.5,0.5)
 barFrame.BackgroundColor3 = Color3.fromRGB(70,70,78)
-barFrame.ZIndex = 99999
+barFrame.ZIndex = 3
 barFrame.Parent = bg
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0,12)
@@ -67,9 +67,9 @@ corner.Parent = barFrame
 
 -- barra de preenchimento (azul)
 local fill = Instance.new("Frame")
-fill.Size = UDim2.new(0.01,0,1,0)
+fill.Size = UDim2.new(0,0,1,0) -- começa em 0
 fill.BackgroundColor3 = Color3.fromRGB(0,120,255)
-fill.ZIndex = 100000
+fill.ZIndex = 4
 fill.BorderSizePixel = 0
 fill.Parent = barFrame
 local fillCorner = Instance.new("UICorner")
@@ -78,15 +78,15 @@ fillCorner.Parent = fill
 
 -- texto de porcentagem
 local percent = Instance.new("TextLabel")
-percent.Size = UDim2.new(0.15,0,0.04,0)
+percent.Size = UDim2.new(0.15,0,0.05,0)
 percent.BackgroundTransparency = 1
-percent.Position = UDim2.new(0.5,0,0.62,0)
-percent.AnchorPoint = Vector2.new(0.5,0)
+percent.Position = UDim2.new(0.5,0,0.7,0)
+percent.AnchorPoint = Vector2.new(0.5,0.5)
 percent.Text = "0%"
 percent.Font = Enum.Font.GothamSemibold
 percent.TextScaled = true
 percent.TextColor3 = Color3.fromRGB(200,200,210)
-percent.ZIndex = 99999
+percent.ZIndex = 3
 percent.Parent = bg
 
 -- === parenta em CoreGui ou PlayerGui ===
@@ -139,7 +139,7 @@ task.spawn(function()
 		-- Fade OUT (desaparece rapidamente)
 		local tweenOut = TweenService:Create(
 			phraseLabel, 
-			TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+			TweenInfo.new(0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
 			{TextTransparency = 1}
 		)
 		tweenOut:Play()
@@ -152,53 +152,44 @@ task.spawn(function()
 		-- Fade IN (aparece rapidamente)
 		local tweenIn = TweenService:Create(
 			phraseLabel,
-			TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+			TweenInfo.new(0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
 			{TextTransparency = 0}
 		)
 		tweenIn:Play()
 		tweenIn.Completed:Wait()
 		
 		-- Mantém visível por 3 segundos antes de trocar
-		task.wait(3)
+		task.wait(3.5)
 	end
 end)
 
--- === ANIMAÇÃO DA BARRA (SMOOTH) ===
-local currentProgress = 0
-local targetProgress = 0
+-- === ANIMAÇÃO DA BARRA (110 SEGUNDOS FLUIDA) ===
 local loadingActive = true
+local startTime = tick()
+local duration = 110 -- 110 SEGUNDOS
 
-local function updateBar(progress)
-	local clampedProgress = math.clamp(progress, 0, 1)
-	fill.Size = UDim2.new(clampedProgress, 0, 1, 0)
-	percent.Text = string.format("%d%%", math.floor(clampedProgress * 100))
+local function updateBar()
+	local elapsed = tick() - startTime
+	local progress = math.clamp(elapsed / duration, 0, 1)
+	
+	fill.Size = UDim2.new(progress, 0, 1, 0)
+	percent.Text = string.format("%d%%", math.floor(progress * 100))
+	
+	-- retorna true se ainda está carregando
+	return progress < 1
 end
 
-local connection = RunService.Heartbeat:Connect(function(dt)
+-- Loop principal da barra (FLUIDO)
+local connection = RunService.Heartbeat:Connect(function()
 	if not loadingActive then return end
-	local speed = 2
-	currentProgress = currentProgress + (targetProgress - currentProgress) * math.min(dt * speed, 1)
-	updateBar(currentProgress)
-end)
-
-local function setProgress(value)
-	targetProgress = math.clamp(value / 100, 0, 1)
-end
-
--- CARREGAMENTO DE 110 SEGUNDOS
-task.spawn(function()
-	local totalTime = 110 -- 110 SEGUNDOS
-	local steps = 100
-	local timePerStep = totalTime / steps
 	
-	for i = 0, 100 do
-		if not loadingActive then break end
-		setProgress(i)
-		task.wait(timePerStep) -- 1.1 segundos por step
+	local stillLoading = updateBar()
+	
+	if not stillLoading then
+		loadingActive = false
+		task.wait(0.5)
+		restoreAll()
 	end
-	
-	task.wait(0.5)
-	restoreAll()
 end)
 
 -- === RESTAURAÇÃO ===
@@ -228,7 +219,6 @@ function restoreAll()
 end
 
 getgenv().MkzCleanup = restoreAll
-getgenv().MkzSetProgress = setProgress
 
-print("MkzLoad: Ativo! Duração: 110 segundos")
-print("Frases alternando com fade | Use getgenv().MkzCleanup() para fechar")
+print("MkzLoad: Carregando fluidamente por 110 segundos!")
+print("Use getgenv().MkzCleanup() para fechar antes")
