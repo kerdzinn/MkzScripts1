@@ -26,9 +26,9 @@ bg.BackgroundColor3 = Color3.fromRGB(10,10,12)
 bg.Parent = gui
 bg.ZIndex = 99999
 
--- título (AUMENTADO)
+-- título MUITO MAIOR
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(0.5,0,0.15,0) -- MUITO maior agora
+title.Size = UDim2.new(0.7,0,0.2,0) -- GIGANTE agora
 title.Position = UDim2.new(0.5,0,0.25,0)
 title.AnchorPoint = Vector2.new(0.5,0.5)
 title.BackgroundTransparency = 1
@@ -39,17 +39,17 @@ title.TextColor3 = Color3.fromRGB(0,160,255)
 title.ZIndex = 99999
 title.Parent = bg
 
--- FRASES ALTERNADAS (acima da barra)
+-- FRASES ALTERNADAS (acima da barra) - BRANCO
 local phraseLabel = Instance.new("TextLabel")
-phraseLabel.Size = UDim2.new(0.6,0,0.06,0)
-phraseLabel.Position = UDim2.new(0.5,0,0.48,0) -- acima da barra
+phraseLabel.Size = UDim2.new(0.7,0,0.05,0)
+phraseLabel.Position = UDim2.new(0.5,0,0.48,0)
 phraseLabel.AnchorPoint = Vector2.new(0.5,0.5)
 phraseLabel.BackgroundTransparency = 1
 phraseLabel.Text = "Loading the script, wait a minute."
 phraseLabel.Font = Enum.Font.Gotham
 phraseLabel.TextScaled = true
-phraseLabel.TextColor3 = Color3.fromRGB(255,255,255)
-phraseLabel.TextTransparency = 0
+phraseLabel.TextColor3 = Color3.fromRGB(255,255,255) -- BRANCO
+title.TextStrokeTransparency = 1
 phraseLabel.ZIndex = 99999
 phraseLabel.Parent = bg
 
@@ -125,7 +125,7 @@ for _, coreType in ipairs(Enum.CoreGuiType:GetEnumItems()) do
 	end)
 end
 
--- === SISTEMA DE FRASES ALTERNADAS ===
+-- === SISTEMA DE FRASES ALTERNADAS COM FADE ===
 local phrases = {
 	"Loading the script, wait a minute.",
 	"If you see any script like this one, maybe its fake!"
@@ -133,98 +133,93 @@ local phrases = {
 local currentPhraseIndex = 1
 local phraseActive = true
 
--- anima as frases alternando com fade in/out
+-- Loop de animação das frases
 task.spawn(function()
 	while phraseActive do
-		-- fade out (desaparece)
-		local fadeOut = TweenService:Create(phraseLabel, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
-			TextTransparency = 1
-		})
-		fadeOut:Play()
-		fadeOut.Completed:Wait()
+		-- Fade OUT (desaparece rapidamente)
+		local tweenOut = TweenService:Create(
+			phraseLabel, 
+			TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+			{TextTransparency = 1}
+		)
+		tweenOut:Play()
+		tweenOut.Completed:Wait()
 		
-		-- troca a frase
+		-- Troca a frase quando invisível
 		currentPhraseIndex = currentPhraseIndex % #phrases + 1
 		phraseLabel.Text = phrases[currentPhraseIndex]
 		
-		-- fade in (aparece)
-		local fadeIn = TweenService:Create(phraseLabel, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {
-			TextTransparency = 0
-		})
-		fadeIn:Play()
-		fadeIn.Completed:Wait()
+		-- Fade IN (aparece rapidamente)
+		local tweenIn = TweenService:Create(
+			phraseLabel,
+			TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+			{TextTransparency = 0}
+		)
+		tweenIn:Play()
+		tweenIn.Completed:Wait()
 		
-		-- mantém visível por um tempo
-		task.wait(2.5)
+		-- Mantém visível por 3 segundos antes de trocar
+		task.wait(3)
 	end
 end)
 
--- === ANIMAÇÃO DA BARRA ===
+-- === ANIMAÇÃO DA BARRA (SMOOTH) ===
 local currentProgress = 0
 local targetProgress = 0
 local loadingActive = true
 
--- função para atualizar visual da barra
 local function updateBar(progress)
 	local clampedProgress = math.clamp(progress, 0, 1)
 	fill.Size = UDim2.new(clampedProgress, 0, 1, 0)
 	percent.Text = string.format("%d%%", math.floor(clampedProgress * 100))
 end
 
--- smooth interpolation da barra
 local connection = RunService.Heartbeat:Connect(function(dt)
 	if not loadingActive then return end
-	
-	-- interpola suavemente até o target
 	local speed = 2
 	currentProgress = currentProgress + (targetProgress - currentProgress) * math.min(dt * speed, 1)
 	updateBar(currentProgress)
 end)
 
--- função para definir progresso
 local function setProgress(value)
 	targetProgress = math.clamp(value / 100, 0, 1)
 end
 
--- carregamento de 110 segundos
+-- CARREGAMENTO DE 110 SEGUNDOS
 task.spawn(function()
-	local duration = 110 -- 110 segundos
+	local totalTime = 110 -- 110 SEGUNDOS
 	local steps = 100
-	local waitTime = duration / steps
+	local timePerStep = totalTime / steps
 	
-	for i = 0, 100, 1 do
+	for i = 0, 100 do
 		if not loadingActive then break end
 		setProgress(i)
-		task.wait(waitTime)
+		task.wait(timePerStep) -- 1.1 segundos por step
 	end
 	
-	-- ao finalizar, aguarda um pouco e limpa
 	task.wait(0.5)
 	restoreAll()
 end)
 
--- === função de restauração ===
+-- === RESTAURAÇÃO ===
 function restoreAll()
 	loadingActive = false
 	phraseActive = false
 	if connection then connection:Disconnect() end
 	
-	-- reabilita CoreGui
 	for _, coreType in ipairs(disabledCore) do
 		pcall(function()
 			StarterGui:SetCoreGuiEnabled(coreType, true)
 		end)
 	end
 	
-	-- restaura ScreenGuis
 	if hiddenFolder and hiddenFolder.Parent then
-		for _, obj in ipairs(hiddenFolder:GetChildren() do
+		for _, obj in ipairs(hiddenFolder:GetChildren()) do
 			pcall(function() obj.Parent = playerGui end)
 		end
 		pcall(function() hiddenFolder:Destroy() end)
 	end
 	
-	-- remove GUI
 	pcall(function()
 		if gui and gui.Parent then
 			gui:Destroy()
@@ -232,9 +227,8 @@ function restoreAll()
 	end)
 end
 
--- expõe funções globalmente
 getgenv().MkzCleanup = restoreAll
 getgenv().MkzSetProgress = setProgress
 
-print(("MkzLoad: Ativo! ParentedToCore=%s | Duração: 110s"):format(tostring(parentedToCore)))
-print("Use getgenv().MkzCleanup() para fechar a tela de loading")
+print("MkzLoad: Ativo! Duração: 110 segundos")
+print("Frases alternando com fade | Use getgenv().MkzCleanup() para fechar")
