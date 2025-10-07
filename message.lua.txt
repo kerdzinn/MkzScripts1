@@ -19,63 +19,13 @@ gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.DisplayOrder = 9999
 
--- fundo PRETO SÓLIDO COM GRID ANIMADO
+-- fundo PRETO SÓLIDO 100%
 local bg = Instance.new("Frame")
 bg.Size = UDim2.new(1,0,1,0)
 bg.BackgroundColor3 = Color3.fromRGB(0,0,0) -- PRETO TOTAL
+bg.BackgroundTransparency = 0 -- SEM TRANSPARÊNCIA
 bg.Parent = gui
 bg.ZIndex = 1
-
--- GRID ANIMADO (linhas sutis se movendo)
-local gridContainer = Instance.new("Frame")
-gridContainer.Size = UDim2.new(1,0,1,0)
-gridContainer.BackgroundTransparency = 1
-gridContainer.ZIndex = 1
-gridContainer.Parent = bg
-
--- linhas verticais
-for i = 1, 8 do
-	local line = Instance.new("Frame")
-	line.Size = UDim2.new(0, 1, 1, 0)
-	line.Position = UDim2.new(i/9, 0, 0, 0)
-	line.BackgroundColor3 = Color3.fromRGB(0,120,255)
-	line.BackgroundTransparency = 0.95
-	line.BorderSizePixel = 0
-	line.ZIndex = 1
-	line.Parent = gridContainer
-	
-	-- anima as linhas
-	task.spawn(function()
-		while line and line.Parent do
-			TweenService:Create(line, TweenInfo.new(4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
-				BackgroundTransparency = 0.98
-			}):Play()
-			task.wait(4)
-		end
-	end)
-end
-
--- linhas horizontais
-for i = 1, 6 do
-	local line = Instance.new("Frame")
-	line.Size = UDim2.new(1, 0, 0, 1)
-	line.Position = UDim2.new(0, 0, i/7, 0)
-	line.BackgroundColor3 = Color3.fromRGB(0,120,255)
-	line.BackgroundTransparency = 0.95
-	line.BorderSizePixel = 0
-	line.ZIndex = 1
-	line.Parent = gridContainer
-	
-	-- anima as linhas
-	task.spawn(function()
-		while line and line.Parent do
-			TweenService:Create(line, TweenInfo.new(4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
-				BackgroundTransparency = 0.98
-			}):Play()
-			task.wait(4)
-		end
-	end)
-end
 
 -- PARTÍCULAS FLUTUANTES
 local particlesFolder = Instance.new("Folder")
