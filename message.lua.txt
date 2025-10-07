@@ -1,250 +1,367 @@
--- Mkz Loading - VERSÃO CORRIGIDA
--- Cole em um executor
+-- Mkz Loading (Completo: force-to-front + barra animada + frases alternadas)
+-- Cole em um executor (KRNL / Delta / Synapse etc.)
 
 local Players = game:GetService("Players")
+local StarterGui = game:GetService("StarterGui")
+local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 
 local plr = Players.LocalPlayer
+if not plr then return end
 local playerGui = plr:WaitForChild("PlayerGui")
 
--- MUTA O SOM PRIMEIRO
-pcall(function()
-	game:GetService("SoundService").Volume = 0
-end)
-
--- GUI
+-- === cria a GUI Mkz ===
 local gui = Instance.new("ScreenGui")
-gui.Name = "MkzLoading"
+gui.Name = "MkzLoad_Executor"
+gui.IgnoreGuiInset = true
 gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-gui.Parent = playerGui
+gui.DisplayOrder = 9999
 
--- Fundo preto
+-- fundo PRETO SÓLIDO 100%
 local bg = Instance.new("Frame")
 bg.Size = UDim2.new(1,0,1,0)
-bg.BackgroundColor3 = Color3.new(0,0,0)
-bg.BorderSizePixel = 0
-bg.ZIndex = 1
+bg.BackgroundColor3 = Color3.fromRGB(0,0,0) -- PRETO TOTAL
+bg.BackgroundTransparency = 0 -- SEM TRANSPARÊNCIA
 bg.Parent = gui
+bg.ZIndex = 1
 
--- Partículas
+-- PARTÍCULAS FLUTUANTES
+local particlesFolder = Instance.new("Folder")
+particlesFolder.Name = "Particles"
+particlesFolder.Parent = bg
+
 for i = 1, 15 do
-	local p = Instance.new("Frame")
-	p.Size = UDim2.new(0, math.random(2,5), 0, math.random(2,5))
-	p.Position = UDim2.new(math.random(0,100)/100, 0, math.random(0,100)/100, 0)
-	p.BackgroundColor3 = Color3.fromRGB(0,160,255)
-	p.BackgroundTransparency = math.random(50,80)/100
-	p.BorderSizePixel = 0
-	p.ZIndex = 2
-	p.Parent = bg
+	local particle = Instance.new("Frame")
+	particle.Size = UDim2.new(0, math.random(2,5), 0, math.random(2,5))
+	particle.Position = UDim2.new(math.random(0,100)/100, 0, math.random(0,100)/100, 0)
+	particle.BackgroundColor3 = Color3.fromRGB(0,160,255)
+	particle.BackgroundTransparency = math.random(50,80)/100
+	particle.BorderSizePixel = 0
+	particle.ZIndex = 2
+	particle.Parent = particlesFolder
 	
-	local c = Instance.new("UICorner")
-	c.CornerRadius = UDim.new(1,0)
-	c.Parent = p
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(1,0)
+	corner.Parent = particle
 	
-	spawn(function()
-		while p.Parent do
-			TweenService:Create(p, TweenInfo.new(math.random(3,6), Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
-				Position = p.Position + UDim2.new(0,0,math.random(-20,20)/100,0)
+	-- anima partícula
+	task.spawn(function()
+		while particle and particle.Parent do
+			local randomTime = math.random(30,60)/10
+			local randomY = math.random(-20,20)/100
+			TweenService:Create(particle, TweenInfo.new(randomTime, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+				Position = particle.Position + UDim2.new(0, 0, randomY, 0),
+				BackgroundTransparency = math.random(30,90)/100
 			}):Play()
-			wait(math.random(3,6))
+			task.wait(randomTime)
 		end
 	end)
 end
 
--- Título
+-- título GIGANTE COM SOMBRA E GRADIENTE
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(0.8,0,0.25,0)
-title.Position = UDim2.new(0.5,0,0.35,0)
+title.Position = UDim2.new(0.5,0,0.35,0) -- MAIS CENTRALIZADO (antes era 0.2)
 title.AnchorPoint = Vector2.new(0.5,0.5)
 title.BackgroundTransparency = 1
 title.Text = "Mkz"
 title.Font = Enum.Font.GothamBold
 title.TextScaled = true
-title.TextColor3 = Color3.fromRGB(0,160,255)
-title.TextStrokeTransparency = 0.5
-title.TextStrokeColor3 = Color3.fromRGB(0,80,180)
-title.ZIndex = 3
+title.TextColor3 = Color3.fromRGB(0,160,255) -- azul base
+title.TextStrokeTransparency = 0.5 -- contorno suave
+title.TextStrokeColor3 = Color3.fromRGB(0,80,180) -- contorno azul escuro
+title.ZIndex = 2
 title.Parent = bg
 
-local tg = Instance.new("UIGradient")
-tg.Color = ColorSequence.new{
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(100,200,255)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(0,120,255))
+-- gradiente no título
+local titleGradient = Instance.new("UIGradient")
+titleGradient.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(100,200,255)), -- azul claro no topo
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0,120,255)) -- azul escuro embaixo
 }
-tg.Rotation = 90
-tg.Parent = title
+titleGradient.Rotation = 90
+titleGradient.Parent = title
 
-spawn(function()
-	while title.Parent do
+-- EFEITO PULSAR NO TÍTULO
+task.spawn(function()
+	while title and title.Parent do
 		TweenService:Create(title, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
-			Size = UDim2.new(0.82,0,0.26,0)
+			Size = UDim2.new(0.82, 0, 0.26, 0)
 		}):Play()
-		wait(2)
+		task.wait(2)
 	end
 end)
 
--- Frase normal
-local phrase = Instance.new("TextLabel")
-phrase.Size = UDim2.new(0.7,0,0.06,0)
-phrase.Position = UDim2.new(0.5,0,0.58,0)
-phrase.AnchorPoint = Vector2.new(0.5,0.5)
-phrase.BackgroundTransparency = 1
-phrase.Text = "Loading the script, wait a minute."
-phrase.Font = Enum.Font.Gotham
-phrase.TextScaled = true
-phrase.TextColor3 = Color3.new(1,1,1)
-phrase.TextStrokeTransparency = 0.8
-phrase.TextStrokeColor3 = Color3.new(0,0,0)
-phrase.ZIndex = 3
-phrase.Parent = bg
+-- FRASES ALTERNADAS COM SOMBRA
+local phraseLabel = Instance.new("TextLabel")
+phraseLabel.Size = UDim2.new(0.7,0,0.06,0)
+phraseLabel.Position = UDim2.new(0.5,0,0.58,0) -- ajustado para ficar proporcional
+phraseLabel.AnchorPoint = Vector2.new(0.5,0.5)
+phraseLabel.BackgroundTransparency = 1
+phraseLabel.Text = "Loading the script, wait a minute."
+phraseLabel.Font = Enum.Font.Gotham
+phraseLabel.TextScaled = true
+phraseLabel.TextColor3 = Color3.fromRGB(255,255,255)
+phraseLabel.TextTransparency = 0
+phraseLabel.TextStrokeTransparency = 0.8 -- sombra leve
+phraseLabel.TextStrokeColor3 = Color3.fromRGB(0,0,0)
+phraseLabel.ZIndex = 3
+phraseLabel.Parent = bg
 
--- Erro (invisível)
-local errorMsg = Instance.new("TextLabel")
-errorMsg.Size = UDim2.new(0.8,0,0.08,0)
-errorMsg.Position = UDim2.new(0.5,0,0.58,0)
-errorMsg.AnchorPoint = Vector2.new(0.5,0.5)
-errorMsg.BackgroundTransparency = 1
-errorMsg.Text = "Error! Something is wrong, try rejoining..."
-errorMsg.Font = Enum.Font.GothamBold
-errorMsg.TextScaled = true
-errorMsg.TextColor3 = Color3.fromRGB(255,50,50)
-errorMsg.TextTransparency = 1
-errorMsg.TextStrokeTransparency = 1
-errorMsg.TextStrokeColor3 = Color3.new(0,0,0)
-errorMsg.ZIndex = 3
-errorMsg.Parent = bg
+-- barra moldura (cinza) COM SOMBRA
+local barFrame = Instance.new("Frame")
+barFrame.Size = UDim2.new(0.5,0,0.05,0)
+barFrame.Position = UDim2.new(0.5,0,0.68,0) -- ajustado
+barFrame.AnchorPoint = Vector2.new(0.5,0.5)
+barFrame.BackgroundColor3 = Color3.fromRGB(70,70,78)
+barFrame.ZIndex = 3
+barFrame.Parent = bg
 
--- Barra cinza
-local bar = Instance.new("Frame")
-bar.Size = UDim2.new(0.5,0,0.05,0)
-bar.Position = UDim2.new(0.5,0,0.68,0)
-bar.AnchorPoint = Vector2.new(0.5,0.5)
-bar.BackgroundColor3 = Color3.fromRGB(70,70,78)
-bar.BorderSizePixel = 0
-bar.ZIndex = 3
-bar.Parent = bg
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0,12)
+corner.Parent = barFrame
 
-local bc = Instance.new("UICorner")
-bc.CornerRadius = UDim.new(0,12)
-bc.Parent = bar
+-- sombra na barra
+local barShadow = Instance.new("UIStroke")
+barShadow.Color = Color3.fromRGB(0,0,0)
+barShadow.Thickness = 3
+barShadow.Transparency = 0.7
+barShadow.Parent = barFrame
 
--- Barra azul
+-- barra de preenchimento (azul) COM GRADIENTE E BRILHO
 local fill = Instance.new("Frame")
 fill.Size = UDim2.new(0,0,1,0)
 fill.BackgroundColor3 = Color3.fromRGB(0,120,255)
-fill.BorderSizePixel = 0
 fill.ZIndex = 4
-fill.Parent = bar
+fill.BorderSizePixel = 0
+fill.Parent = barFrame
 
-local fc = Instance.new("UICorner")
-fc.CornerRadius = UDim.new(0,12)
-fc.Parent = fill
+local fillCorner = Instance.new("UICorner")
+fillCorner.CornerRadius = UDim.new(0,12)
+fillCorner.Parent = fill
 
-local fg = Instance.new("UIGradient")
-fg.Color = ColorSequence.new{
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(50,180,255)),
-	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0,140,255)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(0,100,200))
+-- gradiente na barra azul (efeito brilhante)
+local fillGradient = Instance.new("UIGradient")
+fillGradient.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(50,180,255)), -- azul claro
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0,140,255)), -- azul médio
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0,100,200)) -- azul escuro
 }
-fg.Rotation = 90
-fg.Parent = fill
+fillGradient.Rotation = 90
+fillGradient.Parent = fill
 
--- Brilho na barra
+-- brilho na barra (efeito de luz)
+local fillGlow = Instance.new("UIStroke")
+fillGlow.Color = Color3.fromRGB(100,200,255)
+fillGlow.Thickness = 2
+fillGlow.Transparency = 0.5
+fillGlow.Parent = fill
+
+-- BRILHO QUE PERCORRE A BARRA
 local shine = Instance.new("Frame")
-shine.Size = UDim2.new(0.15,0,1,0)
-shine.Position = UDim2.new(-0.15,0,0,0)
-shine.BackgroundColor3 = Color3.new(1,1,1)
+shine.Size = UDim2.new(0.15, 0, 1, 0)
+shine.Position = UDim2.new(-0.15, 0, 0, 0)
+shine.BackgroundColor3 = Color3.fromRGB(255,255,255)
 shine.BackgroundTransparency = 0.7
 shine.BorderSizePixel = 0
 shine.ZIndex = 5
 shine.Parent = fill
 
-local sc = Instance.new("UICorner")
-sc.CornerRadius = UDim.new(0,12)
-sc.Parent = shine
+local shineCorner = Instance.new("UICorner")
+shineCorner.CornerRadius = UDim.new(0, 12)
+shineCorner.Parent = shine
 
-local sg = Instance.new("UIGradient")
-sg.Transparency = NumberSequence.new{
+local shineGradient = Instance.new("UIGradient")
+shineGradient.Transparency = NumberSequence.new{
 	NumberSequenceKeypoint.new(0, 1),
 	NumberSequenceKeypoint.new(0.5, 0.3),
 	NumberSequenceKeypoint.new(1, 1)
 }
-sg.Parent = shine
+shineGradient.Parent = shine
 
-spawn(function()
-	while shine.Parent do
+task.spawn(function()
+	while shine and shine.Parent do
 		TweenService:Create(shine, TweenInfo.new(2.5, Enum.EasingStyle.Linear), {
-			Position = UDim2.new(1,0,0,0)
+			Position = UDim2.new(1, 0, 0, 0)
 		}):Play()
-		wait(2.5)
-		shine.Position = UDim2.new(-0.15,0,0,0)
-		wait(1)
+		task.wait(2.5)
+		shine.Position = UDim2.new(-0.15, 0, 0, 0)
+		task.wait(1)
 	end
 end)
 
--- Porcentagem
-local pct = Instance.new("TextLabel")
-pct.Size = UDim2.new(0.15,0,0.05,0)
-pct.Position = UDim2.new(0.5,0,0.76,0)
-pct.AnchorPoint = Vector2.new(0.5,0.5)
-pct.BackgroundTransparency = 1
-pct.Text = "0%"
-pct.Font = Enum.Font.GothamSemibold
-pct.TextScaled = true
-pct.TextColor3 = Color3.fromRGB(200,200,210)
-pct.TextStrokeTransparency = 0.7
-pct.TextStrokeColor3 = Color3.new(0,0,0)
-pct.ZIndex = 3
-pct.Parent = bg
+-- ONDAS ANIMADAS NA BARRA (shimmer)
+local shimmer = Instance.new("UIGradient")
+shimmer.Transparency = NumberSequence.new{
+	NumberSequenceKeypoint.new(0, 0.8),
+	NumberSequenceKeypoint.new(0.5, 0),
+	NumberSequenceKeypoint.new(1, 0.8)
+}
+shimmer.Offset = Vector2.new(-1, 0)
+shimmer.Parent = fill
 
--- Frases alternando
+task.spawn(function()
+	while shimmer and shimmer.Parent do
+		TweenService:Create(shimmer, TweenInfo.new(3, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, true), {
+			Offset = Vector2.new(1, 0)
+		}):Play()
+		task.wait(3)
+	end
+end)
+
+-- texto de porcentagem COM SOMBRA
+local percent = Instance.new("TextLabel")
+percent.Size = UDim2.new(0.15,0,0.05,0)
+percent.BackgroundTransparency = 1
+percent.Position = UDim2.new(0.5,0,0.76,0) -- ajustado
+percent.AnchorPoint = Vector2.new(0.5,0.5)
+percent.Text = "0%"
+percent.Font = Enum.Font.GothamSemibold
+percent.TextScaled = true
+percent.TextColor3 = Color3.fromRGB(200,200,210)
+percent.TextStrokeTransparency = 0.7
+percent.TextStrokeColor3 = Color3.fromRGB(0,0,0)
+percent.ZIndex = 3
+percent.Parent = bg
+
+-- === parenta em CoreGui ou PlayerGui ===
+local parentedToCore = false
+local ok, err = pcall(function()
+	gui.Parent = CoreGui
+end)
+if ok then
+	parentedToCore = true
+else
+	gui.Parent = playerGui
+	parentedToCore = false
+end
+
+-- === esconde outras ScreenGuis ===
+local hiddenFolder = Instance.new("Folder")
+hiddenFolder.Name = "MkzHiddenTemp"
+hiddenFolder.Parent = playerGui
+
+local movedScreens = {}
+for _,child in ipairs(playerGui:GetChildren()) do
+	if child:IsA("ScreenGui") and child ~= gui and child.Name ~= "MkzHiddenTemp" then
+		pcall(function()
+			table.insert(movedScreens, child)
+			child.Parent = hiddenFolder
+		end)
+	end
+end
+
+-- === desabilita CoreGui types ===
+local disabledCore = {}
+for _, coreType in ipairs(Enum.CoreGuiType:GetEnumItems()) do
+	pcall(function()
+		StarterGui:SetCoreGuiEnabled(coreType, false)
+		table.insert(disabledCore, coreType)
+	end)
+end
+
+-- === SISTEMA DE FRASES ALTERNADAS COM FADE ===
 local phrases = {
 	"Loading the script, wait a minute.",
 	"If you see any script like this one, maybe its fake!"
 }
-local pi = 1
-local active = true
+local currentPhraseIndex = 1
+local phraseActive = true
 
-spawn(function()
-	while active and phrase.Parent do
-		for d = 1, 3 do
-			phrase.Text = phrases[pi] .. string.rep(".", d)
-			wait(0.4)
+-- Loop de animação das frases
+task.spawn(function()
+	while phraseActive do
+		-- adiciona pontinhos animados
+		local dots = ""
+		for dotCount = 1, 3 do
+			phraseLabel.Text = phrases[currentPhraseIndex] .. dots
+			dots = dots .. "."
+			task.wait(0.4)
 		end
-		wait(0.5)
+		task.wait(0.5)
 		
-		TweenService:Create(phrase, TweenInfo.new(0.7), {TextTransparency = 1}):Play()
-		wait(0.7)
+		-- Fade OUT
+		local tweenOut = TweenService:Create(
+			phraseLabel, 
+			TweenInfo.new(0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+			{TextTransparency = 1, TextStrokeTransparency = 1}
+		)
+		tweenOut:Play()
+		tweenOut.Completed:Wait()
 		
-		pi = pi % #phrases + 1
-		phrase.Text = phrases[pi]
+		-- Troca a frase
+		currentPhraseIndex = currentPhraseIndex % #phrases + 1
+		phraseLabel.Text = phrases[currentPhraseIndex]
 		
-		TweenService:Create(phrase, TweenInfo.new(0.7), {TextTransparency = 0}):Play()
-		wait(2.7)
+		-- Fade IN
+		local tweenIn = TweenService:Create(
+			phraseLabel,
+			TweenInfo.new(0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+			{TextTransparency = 0, TextStrokeTransparency = 0.8}
+		)
+		tweenIn:Play()
+		tweenIn.Completed:Wait()
+		
+		task.wait(2)
 	end
 end)
 
--- ANIMAÇÃO DA BARRA
-local start = tick()
-local shown = false
+-- === ANIMAÇÃO DA BARRA (110 SEGUNDOS FLUIDA) ===
+local loadingActive = true
+local startTime = tick()
+local duration = 110
 
-RunService.Heartbeat:Connect(function()
-	local t = tick() - start
-	local prog = math.min(t / 110, 0.98)
+local function updateBar()
+	local elapsed = tick() - startTime
+	local progress = math.clamp(elapsed / duration, 0, 1)
 	
-	fill.Size = UDim2.new(prog, 0, 1, 0)
-	pct.Text = math.floor(prog * 100) .. "%"
+	fill.Size = UDim2.new(progress, 0, 1, 0)
+	percent.Text = string.format("%d%%", math.floor(progress * 100))
 	
-	if prog >= 0.98 and not shown then
-		shown = true
-		active = false
-		
-		TweenService:Create(phrase, TweenInfo.new(0.8), {TextTransparency = 1}):Play()
-		wait(1)
-		TweenService:Create(errorMsg, TweenInfo.new(1.2), {TextTransparency = 0, TextStrokeTransparency = 0.7}):Play()
+	return progress < 1
+end
+
+local connection = RunService.Heartbeat:Connect(function()
+	if not loadingActive then return end
+	
+	local stillLoading = updateBar()
+	
+	if not stillLoading then
+		loadingActive = false
+		task.wait(0.5)
+		restoreAll()
 	end
 end)
 
-print("Mkz Loading iniciado! Trava em 98%")
+-- === RESTAURAÇÃO ===
+function restoreAll()
+	loadingActive = false
+	phraseActive = false
+	if connection then connection:Disconnect() end
+	
+	for _, coreType in ipairs(disabledCore) do
+		pcall(function()
+			StarterGui:SetCoreGuiEnabled(coreType, true)
+		end)
+	end
+	
+	if hiddenFolder and hiddenFolder.Parent then
+		for _, obj in ipairs(hiddenFolder:GetChildren()) do
+			pcall(function() obj.Parent = playerGui end)
+		end
+		pcall(function() hiddenFolder:Destroy() end)
+	end
+	
+	pcall(function()
+		if gui and gui.Parent then
+			gui:Destroy()
+		end
+	end)
+end
+
+getgenv().MkzCleanup = restoreAll
+
+print("MkzLoad: Ativo com efeitos visuais! 110 segundos")
+print("Use getgenv().MkzCleanup() para fechar")
