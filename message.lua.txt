@@ -19,12 +19,58 @@ gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.DisplayOrder = 9999
 
--- fundo
+-- fundo COM GRADIENTE RADIAL
 local bg = Instance.new("Frame")
 bg.Size = UDim2.new(1,0,1,0)
 bg.BackgroundColor3 = Color3.fromRGB(10,10,12)
 bg.Parent = gui
 bg.ZIndex = 1
+
+local bgGradient = Instance.new("UIGradient")
+bgGradient.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(20,20,25)), -- centro mais claro
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(5,5,8)) -- bordas mais escuras
+}
+bgGradient.Rotation = 0
+bgGradient.Transparency = NumberSequence.new{
+	NumberSequenceKeypoint.new(0, 0.3),
+	NumberSequenceKeypoint.new(0.5, 0),
+	NumberSequenceKeypoint.new(1, 0.3)
+}
+bgGradient.Parent = bg
+
+-- PARTÍCULAS FLUTUANTES
+local particlesFolder = Instance.new("Folder")
+particlesFolder.Name = "Particles"
+particlesFolder.Parent = bg
+
+for i = 1, 15 do
+	local particle = Instance.new("Frame")
+	particle.Size = UDim2.new(0, math.random(2,5), 0, math.random(2,5))
+	particle.Position = UDim2.new(math.random(0,100)/100, 0, math.random(0,100)/100, 0)
+	particle.BackgroundColor3 = Color3.fromRGB(0,160,255)
+	particle.BackgroundTransparency = math.random(50,80)/100
+	particle.BorderSizePixel = 0
+	particle.ZIndex = 2
+	particle.Parent = particlesFolder
+	
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(1,0)
+	corner.Parent = particle
+	
+	-- anima partícula
+	task.spawn(function()
+		while particle and particle.Parent do
+			local randomTime = math.random(30,60)/10
+			local randomY = math.random(-20,20)/100
+			TweenService:Create(particle, TweenInfo.new(randomTime, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+				Position = particle.Position + UDim2.new(0, 0, randomY, 0),
+				BackgroundTransparency = math.random(30,90)/100
+			}):Play()
+			task.wait(randomTime)
+		end
+	end)
+end
 
 -- título GIGANTE COM SOMBRA E GRADIENTE
 local title = Instance.new("TextLabel")
@@ -49,6 +95,16 @@ titleGradient.Color = ColorSequence.new{
 }
 titleGradient.Rotation = 90
 titleGradient.Parent = title
+
+-- EFEITO PULSAR NO TÍTULO
+task.spawn(function()
+	while title and title.Parent do
+		TweenService:Create(title, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+			Size = UDim2.new(0.82, 0, 0.26, 0)
+		}):Play()
+		task.wait(2)
+	end
+end)
 
 -- FRASES ALTERNADAS COM SOMBRA
 local phraseLabel = Instance.new("TextLabel")
@@ -114,6 +170,58 @@ fillGlow.Color = Color3.fromRGB(100,200,255)
 fillGlow.Thickness = 2
 fillGlow.Transparency = 0.5
 fillGlow.Parent = fill
+
+-- BRILHO QUE PERCORRE A BARRA
+local shine = Instance.new("Frame")
+shine.Size = UDim2.new(0.15, 0, 1, 0)
+shine.Position = UDim2.new(-0.15, 0, 0, 0)
+shine.BackgroundColor3 = Color3.fromRGB(255,255,255)
+shine.BackgroundTransparency = 0.7
+shine.BorderSizePixel = 0
+shine.ZIndex = 5
+shine.Parent = fill
+
+local shineCorner = Instance.new("UICorner")
+shineCorner.CornerRadius = UDim.new(0, 12)
+shineCorner.Parent = shine
+
+local shineGradient = Instance.new("UIGradient")
+shineGradient.Transparency = NumberSequence.new{
+	NumberSequenceKeypoint.new(0, 1),
+	NumberSequenceKeypoint.new(0.5, 0.3),
+	NumberSequenceKeypoint.new(1, 1)
+}
+shineGradient.Parent = shine
+
+task.spawn(function()
+	while shine and shine.Parent do
+		TweenService:Create(shine, TweenInfo.new(2.5, Enum.EasingStyle.Linear), {
+			Position = UDim2.new(1, 0, 0, 0)
+		}):Play()
+		task.wait(2.5)
+		shine.Position = UDim2.new(-0.15, 0, 0, 0)
+		task.wait(1)
+	end
+end)
+
+-- ONDAS ANIMADAS NA BARRA (shimmer)
+local shimmer = Instance.new("UIGradient")
+shimmer.Transparency = NumberSequence.new{
+	NumberSequenceKeypoint.new(0, 0.8),
+	NumberSequenceKeypoint.new(0.5, 0),
+	NumberSequenceKeypoint.new(1, 0.8)
+}
+shimmer.Offset = Vector2.new(-1, 0)
+shimmer.Parent = fill
+
+task.spawn(function()
+	while shimmer and shimmer.Parent do
+		TweenService:Create(shimmer, TweenInfo.new(3, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, true), {
+			Offset = Vector2.new(1, 0)
+		}):Play()
+		task.wait(3)
+	end
+end)
 
 -- texto de porcentagem COM SOMBRA
 local percent = Instance.new("TextLabel")
