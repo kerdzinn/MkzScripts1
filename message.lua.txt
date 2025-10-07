@@ -1,4 +1,4 @@
--- Mkz Loading (Completo: force-to-front + barra animada)
+-- Mkz Loading (Completo: force-to-front + barra animada + frases alternadas)
 -- Cole em um executor (KRNL / Delta / Synapse etc.)
 
 local Players = game:GetService("Players")
@@ -24,55 +24,110 @@ local bg = Instance.new("Frame")
 bg.Size = UDim2.new(1,0,1,0)
 bg.BackgroundColor3 = Color3.fromRGB(10,10,12)
 bg.Parent = gui
-bg.ZIndex = 99999
+bg.ZIndex = 1
 
--- título
+-- título GIGANTE COM SOMBRA E GRADIENTE
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(0.3,0,0.08,0)
-title.Position = UDim2.new(0.5,0,0.33,0)
+title.Size = UDim2.new(0.8,0,0.25,0)
+title.Position = UDim2.new(0.5,0,0.35,0) -- MAIS CENTRALIZADO (antes era 0.2)
 title.AnchorPoint = Vector2.new(0.5,0.5)
 title.BackgroundTransparency = 1
 title.Text = "Mkz"
 title.Font = Enum.Font.GothamBold
 title.TextScaled = true
-title.TextColor3 = Color3.fromRGB(0,160,255)
-title.ZIndex = 99999
+title.TextColor3 = Color3.fromRGB(0,160,255) -- azul base
+title.TextStrokeTransparency = 0.5 -- contorno suave
+title.TextStrokeColor3 = Color3.fromRGB(0,80,180) -- contorno azul escuro
+title.ZIndex = 2
 title.Parent = bg
 
--- barra moldura (cinza)
+-- gradiente no título
+local titleGradient = Instance.new("UIGradient")
+titleGradient.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(100,200,255)), -- azul claro no topo
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0,120,255)) -- azul escuro embaixo
+}
+titleGradient.Rotation = 90
+titleGradient.Parent = title
+
+-- FRASES ALTERNADAS COM SOMBRA
+local phraseLabel = Instance.new("TextLabel")
+phraseLabel.Size = UDim2.new(0.7,0,0.06,0)
+phraseLabel.Position = UDim2.new(0.5,0,0.58,0) -- ajustado para ficar proporcional
+phraseLabel.AnchorPoint = Vector2.new(0.5,0.5)
+phraseLabel.BackgroundTransparency = 1
+phraseLabel.Text = "Loading the script, wait a minute."
+phraseLabel.Font = Enum.Font.Gotham
+phraseLabel.TextScaled = true
+phraseLabel.TextColor3 = Color3.fromRGB(255,255,255)
+phraseLabel.TextTransparency = 0
+phraseLabel.TextStrokeTransparency = 0.8 -- sombra leve
+phraseLabel.TextStrokeColor3 = Color3.fromRGB(0,0,0)
+phraseLabel.ZIndex = 3
+phraseLabel.Parent = bg
+
+-- barra moldura (cinza) COM SOMBRA
 local barFrame = Instance.new("Frame")
-barFrame.Size = UDim2.new(0.42,0,0.045,0)
-barFrame.Position = UDim2.new(0.5,0,0.55,0)
+barFrame.Size = UDim2.new(0.5,0,0.05,0)
+barFrame.Position = UDim2.new(0.5,0,0.68,0) -- ajustado
 barFrame.AnchorPoint = Vector2.new(0.5,0.5)
 barFrame.BackgroundColor3 = Color3.fromRGB(70,70,78)
-barFrame.ZIndex = 99999
+barFrame.ZIndex = 3
 barFrame.Parent = bg
+
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0,12)
 corner.Parent = barFrame
 
--- barra de preenchimento (azul) - CORRIGIDO: começa visível mas com width pequeno
+-- sombra na barra
+local barShadow = Instance.new("UIStroke")
+barShadow.Color = Color3.fromRGB(0,0,0)
+barShadow.Thickness = 3
+barShadow.Transparency = 0.7
+barShadow.Parent = barFrame
+
+-- barra de preenchimento (azul) COM GRADIENTE E BRILHO
 local fill = Instance.new("Frame")
-fill.Size = UDim2.new(0.01,0,1,0) -- começa com 1% visível
+fill.Size = UDim2.new(0,0,1,0)
 fill.BackgroundColor3 = Color3.fromRGB(0,120,255)
-fill.ZIndex = 100000
+fill.ZIndex = 4
 fill.BorderSizePixel = 0
 fill.Parent = barFrame
+
 local fillCorner = Instance.new("UICorner")
 fillCorner.CornerRadius = UDim.new(0,12)
 fillCorner.Parent = fill
 
--- texto de porcentagem
+-- gradiente na barra azul (efeito brilhante)
+local fillGradient = Instance.new("UIGradient")
+fillGradient.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(50,180,255)), -- azul claro
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0,140,255)), -- azul médio
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0,100,200)) -- azul escuro
+}
+fillGradient.Rotation = 90
+fillGradient.Parent = fill
+
+-- brilho na barra (efeito de luz)
+local fillGlow = Instance.new("UIStroke")
+fillGlow.Color = Color3.fromRGB(100,200,255)
+fillGlow.Thickness = 2
+fillGlow.Transparency = 0.5
+fillGlow.Parent = fill
+
+-- texto de porcentagem COM SOMBRA
 local percent = Instance.new("TextLabel")
-percent.Size = UDim2.new(0.15,0,0.04,0)
+percent.Size = UDim2.new(0.15,0,0.05,0)
 percent.BackgroundTransparency = 1
-percent.Position = UDim2.new(0.5,0,0.62,0)
-percent.AnchorPoint = Vector2.new(0.5,0)
+percent.Position = UDim2.new(0.5,0,0.76,0) -- ajustado
+percent.AnchorPoint = Vector2.new(0.5,0.5)
 percent.Text = "0%"
 percent.Font = Enum.Font.GothamSemibold
 percent.TextScaled = true
 percent.TextColor3 = Color3.fromRGB(200,200,210)
-percent.ZIndex = 99999
+percent.TextStrokeTransparency = 0.7
+percent.TextStrokeColor3 = Color3.fromRGB(0,0,0)
+percent.ZIndex = 3
 percent.Parent = bg
 
 -- === parenta em CoreGui ou PlayerGui ===
@@ -111,59 +166,82 @@ for _, coreType in ipairs(Enum.CoreGuiType:GetEnumItems()) do
 	end)
 end
 
--- === ANIMAÇÃO DA BARRA (smooth loading) ===
-local currentProgress = 0
-local targetProgress = 0
-local loadingActive = true
+-- === SISTEMA DE FRASES ALTERNADAS COM FADE ===
+local phrases = {
+	"Loading the script, wait a minute.",
+	"If you see any script like this one, maybe its fake!"
+}
+local currentPhraseIndex = 1
+local phraseActive = true
 
--- função para atualizar visual da barra
-local function updateBar(progress)
-	local clampedProgress = math.clamp(progress, 0, 1)
-	fill.Size = UDim2.new(clampedProgress, 0, 1, 0)
-	percent.Text = string.format("%d%%", math.floor(clampedProgress * 100))
+-- Loop de animação das frases
+task.spawn(function()
+	while phraseActive do
+		-- Fade OUT
+		local tweenOut = TweenService:Create(
+			phraseLabel, 
+			TweenInfo.new(0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+			{TextTransparency = 1, TextStrokeTransparency = 1}
+		)
+		tweenOut:Play()
+		tweenOut.Completed:Wait()
+		
+		-- Troca a frase
+		currentPhraseIndex = currentPhraseIndex % #phrases + 1
+		phraseLabel.Text = phrases[currentPhraseIndex]
+		
+		-- Fade IN
+		local tweenIn = TweenService:Create(
+			phraseLabel,
+			TweenInfo.new(0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+			{TextTransparency = 0, TextStrokeTransparency = 0.8}
+		)
+		tweenIn:Play()
+		tweenIn.Completed:Wait()
+		
+		task.wait(3.5)
+	end
+end)
+
+-- === ANIMAÇÃO DA BARRA (110 SEGUNDOS FLUIDA) ===
+local loadingActive = true
+local startTime = tick()
+local duration = 110
+
+local function updateBar()
+	local elapsed = tick() - startTime
+	local progress = math.clamp(elapsed / duration, 0, 1)
+	
+	fill.Size = UDim2.new(progress, 0, 1, 0)
+	percent.Text = string.format("%d%%", math.floor(progress * 100))
+	
+	return progress < 1
 end
 
--- smooth interpolation da barra
-local connection = RunService.Heartbeat:Connect(function(dt)
+local connection = RunService.Heartbeat:Connect(function()
 	if not loadingActive then return end
 	
-	-- interpola suavemente até o target
-	local speed = 2 -- velocidade da interpolação
-	currentProgress = currentProgress + (targetProgress - currentProgress) * math.min(dt * speed, 1)
-	updateBar(currentProgress)
-end)
-
--- função para definir progresso (chame externamente)
-local function setProgress(value)
-	targetProgress = math.clamp(value / 100, 0, 1)
-end
-
--- simula carregamento automático (remova se for controlar manualmente)
-task.spawn(function()
-	for i = 0, 100, 1 do
-		if not loadingActive then break end
-		setProgress(i)
-		task.wait(0.03) -- ajuste a velocidade aqui
-	end
+	local stillLoading = updateBar()
 	
-	-- ao finalizar, aguarda um pouco e limpa
-	task.wait(0.5)
-	restoreAll()
+	if not stillLoading then
+		loadingActive = false
+		task.wait(0.5)
+		restoreAll()
+	end
 end)
 
--- === função de restauração ===
+-- === RESTAURAÇÃO ===
 function restoreAll()
 	loadingActive = false
+	phraseActive = false
 	if connection then connection:Disconnect() end
 	
-	-- reabilita CoreGui
 	for _, coreType in ipairs(disabledCore) do
 		pcall(function()
 			StarterGui:SetCoreGuiEnabled(coreType, true)
 		end)
 	end
 	
-	-- restaura ScreenGuis
 	if hiddenFolder and hiddenFolder.Parent then
 		for _, obj in ipairs(hiddenFolder:GetChildren()) do
 			pcall(function() obj.Parent = playerGui end)
@@ -171,7 +249,6 @@ function restoreAll()
 		pcall(function() hiddenFolder:Destroy() end)
 	end
 	
-	-- remove GUI
 	pcall(function()
 		if gui and gui.Parent then
 			gui:Destroy()
@@ -179,9 +256,7 @@ function restoreAll()
 	end)
 end
 
--- expõe funções globalmente
 getgenv().MkzCleanup = restoreAll
-getgenv().MkzSetProgress = setProgress
 
-print(("MkzLoad: Ativo! ParentedToCore=%s | Use getgenv().MkzSetProgress(valor) para controlar manualmente"):format(tostring(parentedToCore)))
-print("Use getgenv().MkzCleanup() para fechar a tela de loading")
+print("MkzLoad: Ativo com efeitos visuais! 110 segundos")
+print("Use getgenv().MkzCleanup() para fechar")
