@@ -1,21 +1,23 @@
--- Mkz Loading (Step 1: force-to-front + hide other UIs) -- Executor friendly
+-- Mkz Loading (Completo: force-to-front + barra animada)
 -- Cole em um executor (KRNL / Delta / Synapse etc.)
 
 local Players = game:GetService("Players")
 local StarterGui = game:GetService("StarterGui")
 local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 
 local plr = Players.LocalPlayer
 if not plr then return end
 local playerGui = plr:WaitForChild("PlayerGui")
 
--- === cria a GUI Mkz (simples, apenas pra testar layering) ===
+-- === cria a GUI Mkz ===
 local gui = Instance.new("ScreenGui")
 gui.Name = "MkzLoad_Executor"
 gui.IgnoreGuiInset = true
 gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-gui.DisplayOrder = 9999 -- força prioridade entre ScreenGuis
+gui.DisplayOrder = 9999
 
 -- fundo
 local bg = Instance.new("Frame")
@@ -35,7 +37,7 @@ title.Font = Enum.Font.GothamBold
 title.TextScaled = true
 title.TextColor3 = Color3.fromRGB(0,160,255)
 title.ZIndex = 99999
-title.Parent = gui
+title.Parent = bg
 
 -- barra moldura (cinza)
 local barFrame = Instance.new("Frame")
@@ -44,17 +46,25 @@ barFrame.Position = UDim2.new(0.5,0,0.55,0)
 barFrame.AnchorPoint = Vector2.new(0.5,0.5)
 barFrame.BackgroundColor3 = Color3.fromRGB(70,70,78)
 barFrame.ZIndex = 99999
-barFrame.Parent = gui
-local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0,12); corner.Parent = barFrame
+barFrame.Parent = bg
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0,12)
+corner.Parent = barFrame
 
+-- barra de preenchimento (azul) - CORRIGIDO: começa visível mas com width pequeno
 local fill = Instance.new("Frame")
-fill.Size = UDim2.new(0,0,1,0)
+fill.Size = UDim2.new(0.01,0,1,0) -- começa com 1% visível
 fill.BackgroundColor3 = Color3.fromRGB(0,120,255)
-fill.ZIndex = 99999
+fill.ZIndex = 100000
+fill.BorderSizePixel = 0
 fill.Parent = barFrame
-local fillCorner = Instance.new("UICorner"); fillCorner.CornerRadius = UDim.new(0,12); fillCorner.Parent = fill
+local fillCorner = Instance.new("UICorner")
+fillCorner.CornerRadius = UDim.new(0,12)
+fillCorner.Parent = fill
 
+-- texto de porcentagem
 local percent = Instance.new("TextLabel")
+percent.Size = UDim2.new(0.15,0,0.04,0)
 percent.BackgroundTransparency = 1
 percent.Position = UDim2.new(0.5,0,0.62,0)
 percent.AnchorPoint = Vector2.new(0.5,0)
@@ -63,9 +73,9 @@ percent.Font = Enum.Font.GothamSemibold
 percent.TextScaled = true
 percent.TextColor3 = Color3.fromRGB(200,200,210)
 percent.ZIndex = 99999
-percent.Parent = gui
+percent.Parent = bg
 
--- === tenta parentar em CoreGui (método mais confiável para ficar na frente) ===
+-- === parenta em CoreGui ou PlayerGui ===
 local parentedToCore = false
 local ok, err = pcall(function()
 	gui.Parent = CoreGui
@@ -73,12 +83,11 @@ end)
 if ok then
 	parentedToCore = true
 else
-	-- fallback: parenta ao PlayerGui
 	gui.Parent = playerGui
 	parentedToCore = false
 end
 
--- === esconda outras ScreenGuis do PlayerGui (temporariamente) ===
+-- === esconde outras ScreenGuis ===
 local hiddenFolder = Instance.new("Folder")
 hiddenFolder.Name = "MkzHiddenTemp"
 hiddenFolder.Parent = playerGui
@@ -93,7 +102,7 @@ for _,child in ipairs(playerGui:GetChildren()) do
 	end
 end
 
--- === tenta desabilitar CoreGui types (melhora em alguns casos) ===
+-- === desabilita CoreGui types ===
 local disabledCore = {}
 for _, coreType in ipairs(Enum.CoreGuiType:GetEnumItems()) do
 	pcall(function()
@@ -102,22 +111,67 @@ for _, coreType in ipairs(Enum.CoreGuiType:GetEnumItems()) do
 	end)
 end
 
--- === função de restauração (chame getgenv().MkzCleanup() se quiser reverter manualmente) ===
-local function restoreAll()
-	-- reabilita CoreGui types que desabilitamos
+-- === ANIMAÇÃO DA BARRA (smooth loading) ===
+local currentProgress = 0
+local targetProgress = 0
+local loadingActive = true
+
+-- função para atualizar visual da barra
+local function updateBar(progress)
+	local clampedProgress = math.clamp(progress, 0, 1)
+	fill.Size = UDim2.new(clampedProgress, 0, 1, 0)
+	percent.Text = string.format("%d%%", math.floor(clampedProgress * 100))
+end
+
+-- smooth interpolation da barra
+local connection = RunService.Heartbeat:Connect(function(dt)
+	if not loadingActive then return end
+	
+	-- interpola suavemente até o target
+	local speed = 2 -- velocidade da interpolação
+	currentProgress = currentProgress + (targetProgress - currentProgress) * math.min(dt * speed, 1)
+	updateBar(currentProgress)
+end)
+
+-- função para definir progresso (chame externamente)
+local function setProgress(value)
+	targetProgress = math.clamp(value / 100, 0, 1)
+end
+
+-- simula carregamento automático (remova se for controlar manualmente)
+task.spawn(function()
+	for i = 0, 100, 1 do
+		if not loadingActive then break end
+		setProgress(i)
+		task.wait(0.03) -- ajuste a velocidade aqui
+	end
+	
+	-- ao finalizar, aguarda um pouco e limpa
+	task.wait(0.5)
+	restoreAll()
+end)
+
+-- === função de restauração ===
+function restoreAll()
+	loadingActive = false
+	if connection then connection:Disconnect() end
+	
+	-- reabilita CoreGui
 	for _, coreType in ipairs(disabledCore) do
 		pcall(function()
 			StarterGui:SetCoreGuiEnabled(coreType, true)
 		end)
 	end
-	-- reparenta ScreenGuis de volta
+	
+	-- restaura ScreenGuis
 	if hiddenFolder and hiddenFolder.Parent then
 		for _, obj in ipairs(hiddenFolder:GetChildren()) do
 			pcall(function() obj.Parent = playerGui end)
 		end
 		pcall(function() hiddenFolder:Destroy() end)
 	end
-	-- remove nossa GUI caso ainda exista
+	
+	-- remove GUI
 	pcall(function()
 		if gui and gui.Parent then
 			gui:Destroy()
@@ -125,13 +179,9 @@ local function restoreAll()
 	end)
 end
 
--- expõe cleanup globalmente (útil se algo travar)
+-- expõe funções globalmente
 getgenv().MkzCleanup = restoreAll
+getgenv().MkzSetProgress = setProgress
 
--- instrução útil para debug:
-print(("MkzLoad: parentedToCore=%s (se true => em CoreGui). Use getgenv().MkzCleanup() para restaurar."):format(tostring(parentedToCore)))
-
--- OBS: este script foca no passo 1 (front + hide). Próximos passos:
---  - passo 2: deixar o preenchimento da barra FLUIDO (tween / heartbeat smoothing)
---  - passo 3: remover/ajustar qualquer artefato (a faixa branca que você comentou)
--- Me diga quando quiser que eu já implemente o passo 2.
+print(("MkzLoad: Ativo! ParentedToCore=%s | Use getgenv().MkzSetProgress(valor) para controlar manualmente"):format(tostring(parentedToCore)))
+print("Use getgenv().MkzCleanup() para fechar a tela de loading")
