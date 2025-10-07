@@ -19,25 +19,63 @@ gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.DisplayOrder = 9999
 
--- fundo COM GRADIENTE RADIAL
+-- fundo PRETO SÓLIDO COM GRID ANIMADO
 local bg = Instance.new("Frame")
 bg.Size = UDim2.new(1,0,1,0)
-bg.BackgroundColor3 = Color3.fromRGB(10,10,12)
+bg.BackgroundColor3 = Color3.fromRGB(0,0,0) -- PRETO TOTAL
 bg.Parent = gui
 bg.ZIndex = 1
 
-local bgGradient = Instance.new("UIGradient")
-bgGradient.Color = ColorSequence.new{
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(20,20,25)), -- centro mais claro
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(5,5,8)) -- bordas mais escuras
-}
-bgGradient.Rotation = 0
-bgGradient.Transparency = NumberSequence.new{
-	NumberSequenceKeypoint.new(0, 0.3),
-	NumberSequenceKeypoint.new(0.5, 0),
-	NumberSequenceKeypoint.new(1, 0.3)
-}
-bgGradient.Parent = bg
+-- GRID ANIMADO (linhas sutis se movendo)
+local gridContainer = Instance.new("Frame")
+gridContainer.Size = UDim2.new(1,0,1,0)
+gridContainer.BackgroundTransparency = 1
+gridContainer.ZIndex = 1
+gridContainer.Parent = bg
+
+-- linhas verticais
+for i = 1, 8 do
+	local line = Instance.new("Frame")
+	line.Size = UDim2.new(0, 1, 1, 0)
+	line.Position = UDim2.new(i/9, 0, 0, 0)
+	line.BackgroundColor3 = Color3.fromRGB(0,120,255)
+	line.BackgroundTransparency = 0.95
+	line.BorderSizePixel = 0
+	line.ZIndex = 1
+	line.Parent = gridContainer
+	
+	-- anima as linhas
+	task.spawn(function()
+		while line and line.Parent do
+			TweenService:Create(line, TweenInfo.new(4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+				BackgroundTransparency = 0.98
+			}):Play()
+			task.wait(4)
+		end
+	end)
+end
+
+-- linhas horizontais
+for i = 1, 6 do
+	local line = Instance.new("Frame")
+	line.Size = UDim2.new(1, 0, 0, 1)
+	line.Position = UDim2.new(0, 0, i/7, 0)
+	line.BackgroundColor3 = Color3.fromRGB(0,120,255)
+	line.BackgroundTransparency = 0.95
+	line.BorderSizePixel = 0
+	line.ZIndex = 1
+	line.Parent = gridContainer
+	
+	-- anima as linhas
+	task.spawn(function()
+		while line and line.Parent do
+			TweenService:Create(line, TweenInfo.new(4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+				BackgroundTransparency = 0.98
+			}):Play()
+			task.wait(4)
+		end
+	end)
+end
 
 -- PARTÍCULAS FLUTUANTES
 local particlesFolder = Instance.new("Folder")
@@ -285,6 +323,15 @@ local phraseActive = true
 -- Loop de animação das frases
 task.spawn(function()
 	while phraseActive do
+		-- adiciona pontinhos animados
+		local dots = ""
+		for dotCount = 1, 3 do
+			phraseLabel.Text = phrases[currentPhraseIndex] .. dots
+			dots = dots .. "."
+			task.wait(0.4)
+		end
+		task.wait(0.5)
+		
 		-- Fade OUT
 		local tweenOut = TweenService:Create(
 			phraseLabel, 
@@ -307,7 +354,7 @@ task.spawn(function()
 		tweenIn:Play()
 		tweenIn.Completed:Wait()
 		
-		task.wait(3.5)
+		task.wait(2)
 	end
 end)
 
