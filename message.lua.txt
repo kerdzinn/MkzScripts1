@@ -1,4 +1,4 @@
--- Mkz Loading (Completo: force-to-front + barra animada)
+-- Mkz Loading (Completo: force-to-front + barra animada + frases alternadas)
 -- Cole em um executor (KRNL / Delta / Synapse etc.)
 
 local Players = game:GetService("Players")
@@ -26,10 +26,10 @@ bg.BackgroundColor3 = Color3.fromRGB(10,10,12)
 bg.Parent = gui
 bg.ZIndex = 99999
 
--- título
+-- título (AUMENTADO)
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(0.3,0,0.08,0)
-title.Position = UDim2.new(0.5,0,0.33,0)
+title.Size = UDim2.new(0.5,0,0.15,0) -- MUITO maior agora
+title.Position = UDim2.new(0.5,0,0.25,0)
 title.AnchorPoint = Vector2.new(0.5,0.5)
 title.BackgroundTransparency = 1
 title.Text = "Mkz"
@@ -38,6 +38,20 @@ title.TextScaled = true
 title.TextColor3 = Color3.fromRGB(0,160,255)
 title.ZIndex = 99999
 title.Parent = bg
+
+-- FRASES ALTERNADAS (acima da barra)
+local phraseLabel = Instance.new("TextLabel")
+phraseLabel.Size = UDim2.new(0.6,0,0.06,0)
+phraseLabel.Position = UDim2.new(0.5,0,0.48,0) -- acima da barra
+phraseLabel.AnchorPoint = Vector2.new(0.5,0.5)
+phraseLabel.BackgroundTransparency = 1
+phraseLabel.Text = "Loading the script, wait a minute."
+phraseLabel.Font = Enum.Font.Gotham
+phraseLabel.TextScaled = true
+phraseLabel.TextColor3 = Color3.fromRGB(255,255,255)
+phraseLabel.TextTransparency = 0
+phraseLabel.ZIndex = 99999
+phraseLabel.Parent = bg
 
 -- barra moldura (cinza)
 local barFrame = Instance.new("Frame")
@@ -51,9 +65,9 @@ local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0,12)
 corner.Parent = barFrame
 
--- barra de preenchimento (azul) - CORRIGIDO: começa visível mas com width pequeno
+-- barra de preenchimento (azul)
 local fill = Instance.new("Frame")
-fill.Size = UDim2.new(0.01,0,1,0) -- começa com 1% visível
+fill.Size = UDim2.new(0.01,0,1,0)
 fill.BackgroundColor3 = Color3.fromRGB(0,120,255)
 fill.ZIndex = 100000
 fill.BorderSizePixel = 0
@@ -111,7 +125,41 @@ for _, coreType in ipairs(Enum.CoreGuiType:GetEnumItems()) do
 	end)
 end
 
--- === ANIMAÇÃO DA BARRA (smooth loading) ===
+-- === SISTEMA DE FRASES ALTERNADAS ===
+local phrases = {
+	"Loading the script, wait a minute.",
+	"If you see any script like this one, maybe its fake!"
+}
+local currentPhraseIndex = 1
+local phraseActive = true
+
+-- anima as frases alternando com fade in/out
+task.spawn(function()
+	while phraseActive do
+		-- fade out (desaparece)
+		local fadeOut = TweenService:Create(phraseLabel, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+			TextTransparency = 1
+		})
+		fadeOut:Play()
+		fadeOut.Completed:Wait()
+		
+		-- troca a frase
+		currentPhraseIndex = currentPhraseIndex % #phrases + 1
+		phraseLabel.Text = phrases[currentPhraseIndex]
+		
+		-- fade in (aparece)
+		local fadeIn = TweenService:Create(phraseLabel, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {
+			TextTransparency = 0
+		})
+		fadeIn:Play()
+		fadeIn.Completed:Wait()
+		
+		-- mantém visível por um tempo
+		task.wait(2.5)
+	end
+end)
+
+-- === ANIMAÇÃO DA BARRA ===
 local currentProgress = 0
 local targetProgress = 0
 local loadingActive = true
@@ -128,22 +176,26 @@ local connection = RunService.Heartbeat:Connect(function(dt)
 	if not loadingActive then return end
 	
 	-- interpola suavemente até o target
-	local speed = 2 -- velocidade da interpolação
+	local speed = 2
 	currentProgress = currentProgress + (targetProgress - currentProgress) * math.min(dt * speed, 1)
 	updateBar(currentProgress)
 end)
 
--- função para definir progresso (chame externamente)
+-- função para definir progresso
 local function setProgress(value)
 	targetProgress = math.clamp(value / 100, 0, 1)
 end
 
--- simula carregamento automático (remova se for controlar manualmente)
+-- carregamento de 110 segundos
 task.spawn(function()
+	local duration = 110 -- 110 segundos
+	local steps = 100
+	local waitTime = duration / steps
+	
 	for i = 0, 100, 1 do
 		if not loadingActive then break end
 		setProgress(i)
-		task.wait(0.03) -- ajuste a velocidade aqui
+		task.wait(waitTime)
 	end
 	
 	-- ao finalizar, aguarda um pouco e limpa
@@ -154,6 +206,7 @@ end)
 -- === função de restauração ===
 function restoreAll()
 	loadingActive = false
+	phraseActive = false
 	if connection then connection:Disconnect() end
 	
 	-- reabilita CoreGui
@@ -165,7 +218,7 @@ function restoreAll()
 	
 	-- restaura ScreenGuis
 	if hiddenFolder and hiddenFolder.Parent then
-		for _, obj in ipairs(hiddenFolder:GetChildren()) do
+		for _, obj in ipairs(hiddenFolder:GetChildren() do
 			pcall(function() obj.Parent = playerGui end)
 		end
 		pcall(function() hiddenFolder:Destroy() end)
@@ -183,5 +236,5 @@ end
 getgenv().MkzCleanup = restoreAll
 getgenv().MkzSetProgress = setProgress
 
-print(("MkzLoad: Ativo! ParentedToCore=%s | Use getgenv().MkzSetProgress(valor) para controlar manualmente"):format(tostring(parentedToCore)))
+print(("MkzLoad: Ativo! ParentedToCore=%s | Duração: 110s"):format(tostring(parentedToCore)))
 print("Use getgenv().MkzCleanup() para fechar a tela de loading")
