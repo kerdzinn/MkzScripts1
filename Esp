@@ -1,24 +1,26 @@
--- ESP Script para Phantom Forces
--- Coloque em um LocalScript no StarterPlayerScripts
+-- ESP Script para Phantom Forces (CORRIGIDO)
+-- Coloque em um LocalScript no StarterPlayerScripts ou execute via executor
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
-local CoreGui = game:GetService("CoreGui")
 
+-- Usar o PlayerGui ao invés de CoreGui para maior compatibilidade
 local localPlayer = Players.LocalPlayer
+local playerGui = localPlayer:WaitForChild("PlayerGui")
+
 local espCache = {}
 
 -- Configurações
 local settings = {
     enabled = true,
     teamCheck = true,
-    maxDistance = 500,
+    maxDistance = 1000,
     
     enemyColor = Color3.fromRGB(255, 50, 50),
     teamColor = Color3.fromRGB(50, 255, 50),
     
-    boxThickness = 1,
+    boxThickness = 2,
     textSize = 14,
     
     showName = true,
@@ -37,92 +39,95 @@ end
 -- Função para calcular distância
 local function getDistance(char)
     local localChar = localPlayer.Character
-    if not localChar or not localChar.PrimaryPart then return 999 end
-    if not char or not char.PrimaryPart then return 999 end
-    return math.floor((localChar.PrimaryPart.Position - char.PrimaryPart.Position).Magnitude)
+    if not localChar or not localChar:FindFirstChild("HumanoidRootPart") then return 9999 end
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return 9999 end
+    return math.floor((localChar.HumanoidRootPart.Position - char.HumanoidRootPart.Position).Magnitude)
 end
+
+-- Criar container principal para ESP
+local espGui = Instance.new("ScreenGui")
+espGui.Name = "PF_ESP_Display"
+espGui.ResetOnSpawn = false
+espGui.IgnoreGuiInset = true
+espGui.Parent = playerGui
 
 -- Função para criar ESP
 local function createESP(player)
     if espCache[player] then return end
+    if player == localPlayer then return end
     
     local esp = {
-        box = nil,
-        name = nil,
-        distance = nil
+        frame = nil,
+        lines = {},
+        nameLabel = nil,
+        distLabel = nil
     }
     
-    -- Aguardar character
-    if not player.Character then
-        player.CharacterAdded:Wait()
-    end
+    -- Container para este player
+    local container = Instance.new("Frame")
+    container.Name = "ESP_" .. player.Name
+    container.Size = UDim2.new(1, 0, 1, 0)
+    container.BackgroundTransparency = 1
+    container.Parent = espGui
     
-    local character = player.Character
-    if not character then return end
-    
-    -- Criar box outline
+    -- Criar linhas da box
     if settings.showBox then
-        local box = Instance.new("Folder")
-        box.Name = "ESPBox"
-        
-        -- Criar 4 linhas para formar o quadrado
-        local lines = {}
         for i = 1, 4 do
             local line = Instance.new("Frame")
             line.Name = "Line" .. i
             line.BackgroundColor3 = settings.enemyColor
             line.BorderSizePixel = 0
-            line.ZIndex = 10
+            line.AnchorPoint = Vector2.new(0.5, 0.5)
             line.Visible = false
-            line.Parent = box
-            lines[i] = line
+            line.Parent = container
+            esp.lines[i] = line
         end
-        
-        box.Parent = CoreGui
-        esp.box = box
     end
     
-    -- Criar label do nome
+    -- Label do nome
     if settings.showName then
         local nameLabel = Instance.new("TextLabel")
-        nameLabel.Name = "ESPName"
+        nameLabel.Name = "NameLabel"
+        nameLabel.Size = UDim2.new(0, 200, 0, 20)
+        nameLabel.AnchorPoint = Vector2.new(0.5, 1)
         nameLabel.BackgroundTransparency = 1
         nameLabel.Text = player.Name
         nameLabel.TextColor3 = settings.enemyColor
         nameLabel.TextSize = settings.textSize
         nameLabel.Font = Enum.Font.GothamBold
-        nameLabel.TextStrokeTransparency = 0
-        nameLabel.ZIndex = 11
+        nameLabel.TextStrokeTransparency = 0.5
+        nameLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
         nameLabel.Visible = false
-        nameLabel.Parent = CoreGui
-        esp.name = nameLabel
+        nameLabel.Parent = container
+        esp.nameLabel = nameLabel
     end
     
-    -- Criar label de distância
+    -- Label de distância
     if settings.showDistance then
         local distLabel = Instance.new("TextLabel")
-        distLabel.Name = "ESPDistance"
+        distLabel.Name = "DistLabel"
+        distLabel.Size = UDim2.new(0, 200, 0, 18)
+        distLabel.AnchorPoint = Vector2.new(0.5, 1)
         distLabel.BackgroundTransparency = 1
         distLabel.TextColor3 = settings.enemyColor
         distLabel.TextSize = settings.textSize - 2
         distLabel.Font = Enum.Font.Gotham
-        distLabel.TextStrokeTransparency = 0
-        distLabel.ZIndex = 11
+        distLabel.TextStrokeTransparency = 0.5
+        distLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
         distLabel.Visible = false
-        distLabel.Parent = CoreGui
-        esp.distance = distLabel
+        distLabel.Parent = container
+        esp.distLabel = distLabel
     end
     
+    esp.frame = container
     espCache[player] = esp
 end
 
 -- Função para remover ESP
 local function removeESP(player)
     local esp = espCache[player]
-    if esp then
-        if esp.box then esp.box:Destroy() end
-        if esp.name then esp.name:Destroy() end
-        if esp.distance then esp.distance:Destroy() end
+    if esp and esp.frame then
+        esp.frame:Destroy()
         espCache[player] = nil
     end
 end
@@ -131,9 +136,9 @@ end
 local function updateESP()
     if not settings.enabled then
         for player, esp in pairs(espCache) do
-            if esp.box then esp.box.Visible = false end
-            if esp.name then esp.name.Visible = false end
-            if esp.distance then esp.distance.Visible = false end
+            if esp.frame then
+                esp.frame.Visible = false
+            end
         end
         return
     end
@@ -142,211 +147,225 @@ local function updateESP()
     if not camera then return end
     
     for player, esp in pairs(espCache) do
+        if not player or not player.Parent then
+            removeESP(player)
+            continue
+        end
+        
         local character = player.Character
-        if character and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0 then
-            local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-            if humanoidRootPart then
-                local distance = getDistance(character)
+        local humanoid = character and character:FindFirstChild("Humanoid")
+        local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+        
+        if character and humanoid and humanoid.Health > 0 and rootPart then
+            local distance = getDistance(character)
+            
+            if distance <= settings.maxDistance then
+                -- Calcular posições dos cantos da hitbox
+                local head = character:FindFirstChild("Head")
+                if not head then continue end
                 
-                if distance <= settings.maxDistance then
-                    local screenPoint, onScreen = camera:WorldToViewportPoint(humanoidRootPart.Position)
+                local headPos = head.Position + Vector3.new(0, head.Size.Y / 2, 0)
+                local footPos = rootPart.Position - Vector3.new(0, 3, 0)
+                
+                local headScreenPos, headOnScreen = camera:WorldToViewportPoint(headPos)
+                local footScreenPos, footOnScreen = camera:WorldToViewportPoint(footPos)
+                
+                if headOnScreen or footOnScreen then
+                    local color = isEnemy(player) and settings.enemyColor or settings.teamColor
                     
-                    if onScreen then
-                        local color = isEnemy(player) and settings.enemyColor or settings.teamColor
+                    -- Calcular tamanho da box
+                    local height = math.abs(headScreenPos.Y - footScreenPos.Y)
+                    local width = height * 0.6
+                    
+                    local centerX = headScreenPos.X
+                    local centerY = (headScreenPos.Y + footScreenPos.Y) / 2
+                    
+                    -- Atualizar linhas da box
+                    if esp.lines and #esp.lines >= 4 and settings.showBox then
+                        -- Linha superior
+                        esp.lines[1].Size = UDim2.new(0, width, 0, settings.boxThickness)
+                        esp.lines[1].Position = UDim2.new(0, centerX, 0, headScreenPos.Y)
+                        esp.lines[1].BackgroundColor3 = color
+                        esp.lines[1].Visible = true
                         
-                        -- Calcular tamanho da box baseado na distância
-                        local scale = math.clamp(1000 / distance, 0.5, 2)
-                        local boxSize = Vector2.new(80 * scale, 120 * scale)
+                        -- Linha inferior
+                        esp.lines[2].Size = UDim2.new(0, width, 0, settings.boxThickness)
+                        esp.lines[2].Position = UDim2.new(0, centerX, 0, footScreenPos.Y)
+                        esp.lines[2].BackgroundColor3 = color
+                        esp.lines[2].Visible = true
                         
-                        -- Atualizar box
-                        if esp.box and settings.showBox then
-                            local lines = esp.box:GetChildren()
-                            if #lines >= 4 then
-                                local pos = Vector2.new(screenPoint.X, screenPoint.Y)
-                                
-                                -- Linha superior
-                                lines[1].Size = UDim2.new(0, boxSize.X, 0, settings.boxThickness)
-                                lines[1].Position = UDim2.new(0, pos.X - boxSize.X/2, 0, pos.Y - boxSize.Y/2)
-                                lines[1].BackgroundColor3 = color
-                                lines[1].Visible = true
-                                
-                                -- Linha inferior
-                                lines[2].Size = UDim2.new(0, boxSize.X, 0, settings.boxThickness)
-                                lines[2].Position = UDim2.new(0, pos.X - boxSize.X/2, 0, pos.Y + boxSize.Y/2 - settings.boxThickness)
-                                lines[2].BackgroundColor3 = color
-                                lines[2].Visible = true
-                                
-                                -- Linha esquerda
-                                lines[3].Size = UDim2.new(0, settings.boxThickness, 0, boxSize.Y)
-                                lines[3].Position = UDim2.new(0, pos.X - boxSize.X/2, 0, pos.Y - boxSize.Y/2)
-                                lines[3].BackgroundColor3 = color
-                                lines[3].Visible = true
-                                
-                                -- Linha direita
-                                lines[4].Size = UDim2.new(0, settings.boxThickness, 0, boxSize.Y)
-                                lines[4].Position = UDim2.new(0, pos.X + boxSize.X/2 - settings.boxThickness, 0, pos.Y - boxSize.Y/2)
-                                lines[4].BackgroundColor3 = color
-                                lines[4].Visible = true
-                            end
-                        end
+                        -- Linha esquerda
+                        esp.lines[3].Size = UDim2.new(0, settings.boxThickness, 0, height)
+                        esp.lines[3].Position = UDim2.new(0, centerX - width/2, 0, centerY)
+                        esp.lines[3].BackgroundColor3 = color
+                        esp.lines[3].Visible = true
                         
-                        -- Atualizar nome
-                        if esp.name and settings.showName then
-                            esp.name.Text = player.Name
-                            esp.name.TextColor3 = color
-                            esp.name.Position = UDim2.new(0, screenPoint.X, 0, screenPoint.Y - boxSize.Y/2 - 20)
-                            esp.name.Visible = true
-                        end
-                        
-                        -- Atualizar distância
-                        if esp.distance and settings.showDistance then
-                            esp.distance.Text = tostring(distance) .. " studs"
-                            esp.distance.TextColor3 = color
-                            esp.distance.Position = UDim2.new(0, screenPoint.X, 0, screenPoint.Y - boxSize.Y/2 - 35)
-                            esp.distance.Visible = true
-                        end
-                    else
-                        -- Fora da tela
-                        if esp.box then esp.box.Visible = false end
-                        if esp.name then esp.name.Visible = false end
-                        if esp.distance then esp.distance.Visible = false end
+                        -- Linha direita
+                        esp.lines[4].Size = UDim2.new(0, settings.boxThickness, 0, height)
+                        esp.lines[4].Position = UDim2.new(0, centerX + width/2, 0, centerY)
+                        esp.lines[4].BackgroundColor3 = color
+                        esp.lines[4].Visible = true
                     end
+                    
+                    -- Atualizar nome
+                    if esp.nameLabel and settings.showName then
+                        esp.nameLabel.Text = player.Name
+                        esp.nameLabel.TextColor3 = color
+                        esp.nameLabel.Position = UDim2.new(0, centerX, 0, headScreenPos.Y - 5)
+                        esp.nameLabel.Visible = true
+                    end
+                    
+                    -- Atualizar distância
+                    if esp.distLabel and settings.showDistance then
+                        esp.distLabel.Text = tostring(distance) .. "m"
+                        esp.distLabel.TextColor3 = color
+                        esp.distLabel.Position = UDim2.new(0, centerX, 0, headScreenPos.Y - 23)
+                        esp.distLabel.Visible = true
+                    end
+                    
+                    esp.frame.Visible = true
                 else
-                    -- Muito longe
-                    if esp.box then esp.box.Visible = false end
-                    if esp.name then esp.name.Visible = false end
-                    if esp.distance then esp.distance.Visible = false end
+                    -- Fora da tela
+                    esp.frame.Visible = false
                 end
             else
-                -- Sem HumanoidRootPart
-                if esp.box then esp.box.Visible = false end
-                if esp.name then esp.name.Visible = false end
-                if esp.distance then esp.distance.Visible = false end
+                -- Muito longe
+                esp.frame.Visible = false
             end
         else
-            -- Morto ou sem character
-            if esp.box then esp.box.Visible = false end
-            if esp.name then esp.name.Visible = false end
-            if esp.distance then esp.distance.Visible = false end
+            -- Morto ou sem character válido
+            esp.frame.Visible = false
         end
     end
 end
 
 -- Gerenciar jogadores
-local function playerAdded(player)
+local function setupPlayer(player)
     if player == localPlayer then return end
     
-    local function setupCharacter()
-        wait(1) -- Aguardar character carregar
+    local function onCharacterAdded()
+        task.wait(0.5) -- Aguardar character carregar
         createESP(player)
     end
     
-    player.CharacterAdded:Connect(setupCharacter)
+    player.CharacterAdded:Connect(onCharacterAdded)
+    
     player.CharacterRemoving:Connect(function()
-        removeESP(player)
+        local esp = espCache[player]
+        if esp and esp.frame then
+            esp.frame.Visible = false
+        end
     end)
     
     if player.Character then
-        setupCharacter()
+        onCharacterAdded()
     end
 end
 
-local function playerRemoving(player)
-    removeESP(player)
-end
-
--- Inicializar
+-- Inicializar jogadores existentes
 for _, player in ipairs(Players:GetPlayers()) do
-    if player ~= localPlayer then
-        playerAdded(player)
-    end
+    setupPlayer(player)
 end
 
-Players.PlayerAdded:Connect(playerAdded)
-Players.PlayerRemoving:Connect(playerRemoving)
+Players.PlayerAdded:Connect(setupPlayer)
+Players.PlayerRemoving:Connect(removeESP)
 
 -- Interface de controle
-local function createGUI()
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "PF_ESP_Controls"
-    screenGui.Parent = CoreGui
+local function createControlGUI()
+    local controlGui = Instance.new("ScreenGui")
+    controlGui.Name = "PF_ESP_Controls"
+    controlGui.ResetOnSpawn = false
+    controlGui.Parent = playerGui
     
     local mainFrame = Instance.new("Frame")
-    mainFrame.Size = UDim2.new(0, 200, 0, 180)
+    mainFrame.Size = UDim2.new(0, 220, 0, 200)
     mainFrame.Position = UDim2.new(0, 10, 0, 10)
-    mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-    mainFrame.BackgroundTransparency = 0.2
+    mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
     mainFrame.BorderSizePixel = 0
-    mainFrame.Parent = screenGui
+    mainFrame.Active = true
+    mainFrame.Draggable = true
+    mainFrame.Parent = controlGui
     
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 6)
+    corner.CornerRadius = UDim.new(0, 8)
     corner.Parent = mainFrame
     
     local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, 0, 0, 25)
-    title.Position = UDim2.new(0, 0, 0, 0)
-    title.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-    title.Text = "Phantom Forces ESP"
+    title.Size = UDim2.new(1, 0, 0, 30)
+    title.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+    title.Text = "🎯 Phantom Forces ESP"
     title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    title.TextSize = 14
+    title.TextSize = 15
     title.Font = Enum.Font.GothamBold
     title.Parent = mainFrame
     
-    local toggleESP = Instance.new("TextButton")
-    toggleESP.Size = UDim2.new(0.9, 0, 0, 30)
-    toggleESP.Position = UDim2.new(0.05, 0, 0, 35)
-    toggleESP.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-    toggleESP.Text = "ESP: ON"
-    toggleESP.TextColor3 = Color3.fromRGB(0, 255, 0)
-    toggleESP.TextSize = 13
-    toggleESP.Font = Enum.Font.Gotham
-    toggleESP.Parent = mainFrame
+    local titleCorner = Instance.new("UICorner")
+    titleCorner.CornerRadius = UDim.new(0, 8)
+    titleCorner.Parent = title
     
-    toggleESP.MouseButton1Click:Connect(function()
+    -- Função helper para criar botões
+    local function createButton(text, position, callback)
+        local button = Instance.new("TextButton")
+        button.Size = UDim2.new(0.88, 0, 0, 35)
+        button.Position = position
+        button.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+        button.Text = text
+        button.TextColor3 = Color3.fromRGB(255, 255, 255)
+        button.TextSize = 13
+        button.Font = Enum.Font.GothamSemibold
+        button.Parent = mainFrame
+        
+        local buttonCorner = Instance.new("UICorner")
+        buttonCorner.CornerRadius = UDim.new(0, 6)
+        buttonCorner.Parent = button
+        
+        button.MouseButton1Click:Connect(callback)
+        return button
+    end
+    
+    -- Botão Toggle ESP
+    local toggleESP = createButton("ESP: LIGADO", UDim2.new(0.06, 0, 0, 40), function()
         settings.enabled = not settings.enabled
-        toggleESP.Text = settings.enabled and "ESP: ON" or "ESP: OFF"
-        toggleESP.TextColor3 = settings.enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+        toggleESP.Text = settings.enabled and "ESP: LIGADO" or "ESP: DESLIGADO"
+        toggleESP.BackgroundColor3 = settings.enabled and Color3.fromRGB(50, 150, 50) or Color3.fromRGB(150, 50, 50)
     end)
+    toggleESP.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
     
-    local toggleTeam = Instance.new("TextButton")
-    toggleTeam.Size = UDim2.new(0.9, 0, 0, 30)
-    toggleTeam.Position = UDim2.new(0.05, 0, 0, 75)
-    toggleTeam.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-    toggleTeam.Text = "Team Check: ON"
-    toggleTeam.TextColor3 = Color3.fromRGB(0, 255, 0)
-    toggleTeam.TextSize = 13
-    toggleTeam.Font = Enum.Font.Gotham
-    toggleTeam.Parent = mainFrame
-    
-    toggleTeam.MouseButton1Click:Connect(function()
+    -- Botão Team Check
+    local toggleTeam = createButton("Team Check: ON", UDim2.new(0.06, 0, 0, 85), function()
         settings.teamCheck = not settings.teamCheck
         toggleTeam.Text = settings.teamCheck and "Team Check: ON" or "Team Check: OFF"
-        toggleTeam.TextColor3 = settings.teamCheck and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
     end)
     
-    local distanceSlider = Instance.new("TextButton")
-    distanceSlider.Size = UDim2.new(0.9, 0, 0, 30)
-    distanceSlider.Position = UDim2.new(0.05, 0, 0, 115)
-    distanceSlider.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-    distanceSlider.Text = "Max Distance: " .. settings.maxDistance
-    distanceSlider.TextColor3 = Color3.fromRGB(255, 255, 255)
-    distanceSlider.TextSize = 13
-    distanceSlider.Font = Enum.Font.Gotham
-    distanceSlider.Parent = mainFrame
-    
-    distanceSlider.MouseButton1Click:Connect(function()
-        settings.maxDistance = settings.maxDistance == 500 and 1000 or 
-                              settings.maxDistance == 1000 and 2000 or 500
-        distanceSlider.Text = "Max Distance: " .. settings.maxDistance
+    -- Botão Distância
+    local distBtn = createButton("Distância: 1000m", UDim2.new(0.06, 0, 0, 130), function()
+        local distances = {1000, 2000, 3000, 500}
+        local currentIndex = table.find(distances, settings.maxDistance) or 1
+        local nextIndex = (currentIndex % #distances) + 1
+        settings.maxDistance = distances[nextIndex]
+        distBtn.Text = "Distância: " .. settings.maxDistance .. "m"
     end)
+    
+    -- Botão Fechar
+    local closeBtn = createButton("❌ Fechar Menu", UDim2.new(0.06, 0, 0, 175), function()
+        mainFrame.Visible = not mainFrame.Visible
+    end)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
 end
 
 -- Criar interface
-createGUI()
+createControlGUI()
 
 -- Loop principal
-RunService.RenderStepped:Connect(updateESP)
+local connection = RunService.RenderStepped:Connect(updateESP)
 
-print("Phantom Forces ESP carregado!")
-print("Use a interface no canto para controlar o ESP")
+-- Limpeza ao sair
+localPlayer.CharacterRemoving:Connect(function()
+    if connection then
+        connection:Disconnect()
+    end
+end)
+
+print("✅ Phantom Forces ESP carregado com sucesso!")
+print("📌 Use a interface no canto superior esquerdo para controlar")
+print("🎮 O menu é arrastável - você pode movê-lo pela tela")
