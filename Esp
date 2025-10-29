@@ -1,4 +1,4 @@
--- Universal ESP Box Script for Roblox
+-- Universal ESP Box Script for Roblox (UI Version)
 -- Coloque em um LocalScript no StarterPlayerScripts
 
 local Players = game:GetService("Players")
@@ -14,7 +14,6 @@ local ESP_SETTINGS = {
     SHOW_BOX = true,
     SHOW_NAME = true,
     SHOW_DISTANCE = true,
-    SHOW_TRACER = false,
     TEAM_CHECK = true,
     MAX_DISTANCE = 1000,
     
@@ -26,8 +25,8 @@ local ESP_SETTINGS = {
     TEXT_SIZE = 14,
     TEXT_FONT = Enum.Font.GothamBold,
     
-    TRACER_COLOR = Color3.fromRGB(255, 255, 255),
-    TRACER_THICKNESS = 1
+    BOX_THICKNESS = 2,
+    BOX_TRANSPARENCY = 0.7
 }
 
 -- Função para verificar se o player é inimigo
@@ -52,10 +51,9 @@ local function createESP(player)
     if espObjects[player] then return end
     
     espObjects[player] = {
-        box = nil,
+        boxGui = nil,
         nameLabel = nil,
-        distanceLabel = nil,
-        tracer = nil
+        distanceLabel = nil
     }
     
     -- Aguardar character carregar
@@ -64,17 +62,59 @@ local function createESP(player)
     local character = player.Character
     local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
     
-    -- Criar Box
+    -- Criar Box UI
     if ESP_SETTINGS.SHOW_BOX then
-        local box = Instance.new("BoxHandleAdornment")
-        box.Name = "ESPBox"
-        box.Adornee = humanoidRootPart
-        box.AlwaysOnTop = true
-        box.ZIndex = 1
-        box.Size = Vector3.new(4, 6, 4)
-        box.Transparency = 0.7
-        box.Parent = CoreGui
-        espObjects[player].box = box
+        local boxGui = Instance.new("BillboardGui")
+        boxGui.Name = "ESPBoxUI"
+        boxGui.Adornee = humanoidRootPart
+        boxGui.AlwaysOnTop = true
+        boxGui.Size = UDim2.new(4, 0, 6, 0) -- Largura e altura em studs
+        boxGui.StudsOffset = Vector3.new(0, 1, 0)
+        boxGui.Active = false
+        boxGui.ClipsDescendants = false
+        
+        -- Linha superior
+        local topLine = Instance.new("Frame")
+        topLine.Name = "TopLine"
+        topLine.Size = UDim2.new(1, 0, 0, ESP_SETTINGS.BOX_THICKNESS)
+        topLine.Position = UDim2.new(0, 0, 0, 0)
+        topLine.BackgroundColor3 = ESP_SETTINGS.BOX_COLOR_ENEMY
+        topLine.BorderSizePixel = 0
+        topLine.BackgroundTransparency = ESP_SETTINGS.BOX_TRANSPARENCY
+        topLine.Parent = boxGui
+        
+        -- Linha inferior
+        local bottomLine = Instance.new("Frame")
+        bottomLine.Name = "BottomLine"
+        bottomLine.Size = UDim2.new(1, 0, 0, ESP_SETTINGS.BOX_THICKNESS)
+        bottomLine.Position = UDim2.new(0, 0, 1, -ESP_SETTINGS.BOX_THICKNESS)
+        bottomLine.BackgroundColor3 = ESP_SETTINGS.BOX_COLOR_ENEMY
+        bottomLine.BorderSizePixel = 0
+        bottomLine.BackgroundTransparency = ESP_SETTINGS.BOX_TRANSPARENCY
+        bottomLine.Parent = boxGui
+        
+        -- Linha esquerda
+        local leftLine = Instance.new("Frame")
+        leftLine.Name = "LeftLine"
+        leftLine.Size = UDim2.new(0, ESP_SETTINGS.BOX_THICKNESS, 1, 0)
+        leftLine.Position = UDim2.new(0, 0, 0, 0)
+        leftLine.BackgroundColor3 = ESP_SETTINGS.BOX_COLOR_ENEMY
+        leftLine.BorderSizePixel = 0
+        leftLine.BackgroundTransparency = ESP_SETTINGS.BOX_TRANSPARENCY
+        leftLine.Parent = boxGui
+        
+        -- Linha direita
+        local rightLine = Instance.new("Frame")
+        rightLine.Name = "RightLine"
+        rightLine.Size = UDim2.new(0, ESP_SETTINGS.BOX_THICKNESS, 1, 0)
+        rightLine.Position = UDim2.new(1, -ESP_SETTINGS.BOX_THICKNESS, 0, 0)
+        rightLine.BackgroundColor3 = ESP_SETTINGS.BOX_COLOR_ENEMY
+        rightLine.BorderSizePixel = 0
+        rightLine.BackgroundTransparency = ESP_SETTINGS.BOX_TRANSPARENCY
+        rightLine.Parent = boxGui
+        
+        boxGui.Parent = CoreGui
+        espObjects[player].boxGui = boxGui
     end
     
     -- Criar Label do Nome
@@ -86,7 +126,7 @@ local function createESP(player)
         nameLabel.Adornee = humanoidRootPart
         nameLabel.AlwaysOnTop = true
         nameLabel.Size = UDim2.new(0, 200, 0, 50)
-        nameLabel.StudsOffset = Vector3.new(0, 3.5, 0)
+        nameLabel.StudsOffset = Vector3.new(0, 4, 0) -- Acima da box
         
         textLabel.Size = UDim2.new(1, 0, 1, 0)
         textLabel.BackgroundTransparency = 1
@@ -110,7 +150,7 @@ local function createESP(player)
         distanceLabel.Adornee = humanoidRootPart
         distanceLabel.AlwaysOnTop = true
         distanceLabel.Size = UDim2.new(0, 200, 0, 50)
-        distanceLabel.StudsOffset = Vector3.new(0, 2, 0)
+        distanceLabel.StudsOffset = Vector3.new(0, 2.5, 0) -- Entre a box e o nome
         
         textLabel.Size = UDim2.new(1, 0, 1, 0)
         textLabel.BackgroundTransparency = 1
@@ -123,27 +163,19 @@ local function createESP(player)
         distanceLabel.Parent = CoreGui
         espObjects[player].distanceLabel = distanceLabel
     end
-    
-    -- Criar Tracer
-    if ESP_SETTINGS.SHOW_TRACER then
-        local tracer = Instance.new("Frame")
-        tracer.Name = "ESPTracer"
-        tracer.BackgroundColor3 = ESP_SETTINGS.TRACER_COLOR
-        tracer.BorderSizePixel = 0
-        tracer.Size = UDim2.new(0, 1, 0, 1)
-        tracer.Visible = false
-        tracer.Parent = CoreGui
-        espObjects[player].tracer = tracer
-    end
 end
 
 -- Função para remover ESP
 local function removeESP(player)
     if espObjects[player] then
-        for _, obj in pairs(espObjects[player]) do
-            if obj and obj.Parent then
-                obj:Destroy()
-            end
+        if espObjects[player].boxGui then
+            espObjects[player].boxGui:Destroy()
+        end
+        if espObjects[player].nameLabel then
+            espObjects[player].nameLabel:Destroy()
+        end
+        if espObjects[player].distanceLabel then
+            espObjects[player].distanceLabel:Destroy()
         end
         espObjects[player] = nil
     end
@@ -159,9 +191,9 @@ local function updateESP()
             
             -- Verificar distância máxima
             if distance > ESP_SETTINGS.MAX_DISTANCE then
-                for _, obj in pairs(espData) do
-                    if obj then obj.Visible = false end
-                end
+                if espData.boxGui then espData.boxGui.Enabled = false end
+                if espData.nameLabel then espData.nameLabel.Enabled = false end
+                if espData.distanceLabel then espData.distanceLabel.Enabled = false end
                 continue
             end
             
@@ -169,10 +201,16 @@ local function updateESP()
             local isEnemyPlayer = isEnemy(player)
             local boxColor = isEnemyPlayer and ESP_SETTINGS.BOX_COLOR_ENEMY or ESP_SETTINGS.BOX_COLOR_TEAM
             
-            -- Atualizar Box
-            if espData.box then
-                espData.box.Visible = ESP_SETTINGS.SHOW_BOX and ESP_SETTINGS.ENABLED
-                espData.box.Color3 = boxColor
+            -- Atualizar Box UI
+            if espData.boxGui then
+                espData.boxGui.Enabled = ESP_SETTINGS.SHOW_BOX and ESP_SETTINGS.ENABLED
+                
+                -- Atualizar cor de todas as linhas da box
+                for _, line in ipairs(espData.boxGui:GetChildren()) do
+                    if line:IsA("Frame") then
+                        line.BackgroundColor3 = boxColor
+                    end
+                end
             end
             
             -- Atualizar Nome
@@ -194,16 +232,11 @@ local function updateESP()
                 end
             end
             
-            -- Atualizar Tracer
-            if espData.tracer and ESP_SETTINGS.SHOW_TRACER then
-                -- Implementação do tracer (opcional)
-            end
-            
         else
             -- Esconder se não tiver character
-            for _, obj in pairs(espData) do
-                if obj then obj.Visible = false end
-            end
+            if espData.boxGui then espData.boxGui.Enabled = false end
+            if espData.nameLabel then espData.nameLabel.Enabled = false end
+            if espData.distanceLabel then espData.distanceLabel.Enabled = false end
         end
     end
 end
@@ -243,17 +276,68 @@ Players.PlayerRemoving:Connect(onPlayerRemoving)
 -- Loop de atualização
 RunService.RenderStepped:Connect(updateESP)
 
--- Comandos no chat (opcional)
-local function onChatMessage(message)
-    if message:lower() == "/esp on" then
-        ESP_SETTINGS.ENABLED = true
-    elseif message:lower() == "/esp off" then
-        ESP_SETTINGS.ENABLED = false
-    elseif message:lower() == "/esp toggle" then
+-- Interface de usuário para controles
+local function createControlGUI()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "ESPControls"
+    screenGui.Parent = CoreGui
+    
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 200, 0, 150)
+    frame.Position = UDim2.new(0, 10, 0, 10)
+    frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    frame.BackgroundTransparency = 0.3
+    frame.BorderSizePixel = 0
+    frame.Parent = screenGui
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = frame
+    
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 30)
+    title.Position = UDim2.new(0, 0, 0, 0)
+    title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    title.Text = "ESP Controls"
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.TextSize = 16
+    title.Font = Enum.Font.GothamBold
+    title.Parent = frame
+    
+    local toggleButton = Instance.new("TextButton")
+    toggleButton.Size = UDim2.new(0.8, 0, 0, 30)
+    toggleButton.Position = UDim2.new(0.1, 0, 0, 40)
+    toggleButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    toggleButton.Text = "ESP: ON"
+    toggleButton.TextColor3 = Color3.fromRGB(0, 255, 0)
+    toggleButton.TextSize = 14
+    toggleButton.Font = Enum.Font.Gotham
+    toggleButton.Parent = frame
+    
+    toggleButton.MouseButton1Click:Connect(function()
         ESP_SETTINGS.ENABLED = not ESP_SETTINGS.ENABLED
-    end
+        toggleButton.Text = ESP_SETTINGS.ENABLED and "ESP: ON" or "ESP: OFF"
+        toggleButton.TextColor3 = ESP_SETTINGS.ENABLED and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+    end)
+    
+    local teamCheckButton = Instance.new("TextButton")
+    teamCheckButton.Size = UDim2.new(0.8, 0, 0, 30)
+    teamCheckButton.Position = UDim2.new(0.1, 0, 0, 80)
+    teamCheckButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    teamCheckButton.Text = "Team Check: ON"
+    teamCheckButton.TextColor3 = Color3.fromRGB(0, 255, 0)
+    teamCheckButton.TextSize = 14
+    teamCheckButton.Font = Enum.Font.Gotham
+    teamCheckButton.Parent = frame
+    
+    teamCheckButton.MouseButton1Click:Connect(function()
+        ESP_SETTINGS.TEAM_CHECK = not ESP_SETTINGS.TEAM_CHECK
+        teamCheckButton.Text = ESP_SETTINGS.TEAM_CHECK and "Team Check: ON" or "Team Check: OFF"
+        teamCheckButton.TextColor3 = ESP_SETTINGS.TEAM_CHECK and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+    end)
 end
 
-localPlayer.Chatted:Connect(onChatMessage)
+-- Criar GUI de controles
+createControlGUI()
 
-print("Universal ESP carregado! Comandos: /esp on, /esp off, /esp toggle")
+print("Universal ESP UI carregado! Use a interface no canto superior esquerdo para controlar o ESP.")
